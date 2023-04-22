@@ -1,6 +1,7 @@
 ![GitHub Workflow Status (with branch)](https://img.shields.io/github/actions/workflow/status/jonchammer/audio-io/test.yml?branch=main&style=flat-square)
-![GitHub](https://img.shields.io/github/license/jonchammer/audio-io?style=flat-square)
+![License](https://img.shields.io/github/license/jonchammer/audio-io?style=flat-square)
 [![Release](https://img.shields.io/github/release/jonchammer/audio-io.svg?style=flat-square)](https://github.com/jonchammer/audio-io/releases)
+[![GoDoc](https://pkg.go.dev/badge/github.com/jonchammer/audio-io?status.svg)](https://pkg.go.dev/github.com/jonchammer/audio-io?tab=doc)
 
 # Audio I/O
 
