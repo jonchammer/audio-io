@@ -1,6 +1,8 @@
-# audio-io
-
+![GitHub Workflow Status (with branch)](https://img.shields.io/github/actions/workflow/status/jonchammer/audio-io/test.yml?branch=main&style=flat-square)
+![GitHub](https://img.shields.io/github/license/jonchammer/audio-io?style=flat-square)
 [![Release](https://img.shields.io/github/release/jonchammer/audio-io.svg?style=flat-square)](https://github.com/jonchammer/audio-io/releases)
+
+# Audio I/O
 
 `audio-io` is a collection of I/O utilities written in Go that simplify the
 process of working with audio data. Key features include:
