@@ -1,4 +1,7 @@
 # audio-io
+
+[![Release](https://img.shields.io/github/release/jonchammer/audio-io.svg?style=flat-square)](https://github.com/jonchammer/audio-io/releases)
+
 `audio-io` is a collection of I/O utilities written in Go that simplify the
 process of working with audio data. Key features include:
   * A `.wav` file writer that supports:
