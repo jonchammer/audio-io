@@ -13,3 +13,7 @@ process of working with audio data. Key features include:
       `float32`, and `float64` audio formats
   * Interleavers/deinterleavers
     - Used to simplify the process of working with multi-channel audio files
+
+## Examples
+Several examples that demonstrate how to use this library are included in the
+`examples` folder. 
