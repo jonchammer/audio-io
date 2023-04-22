@@ -4,7 +4,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"testing"
 
-	"audio-io/bytes"
+	"github.com/jonchammer/audio-io/bytes"
 )
 
 // ------------------------------------------------------------------------- //

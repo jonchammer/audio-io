@@ -1,4 +1,4 @@
-module audio-io
+module github.com/jonchammer/audio-io
 
 go 1.19
 
