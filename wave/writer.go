@@ -21,6 +21,26 @@ var (
 	ErrWriterExpectedFloat64 = errors.New("sample type was not set to float64 when the writer was constructed")
 )
 
+// A Writer is used to generate .wav files from raw audio samples. A Writer
+// is created using NewWriter, and samples are written using one of the
+// WriteInterleavedXXX methods. Samples can be written over the span of
+// multiple calls (e.g. to allow the caller to generate audio samples on the
+// fly). After all audio samples are written, the caller is expected to call
+// Flush(). Flush() ensures that all wave metadata is set properly.
+//
+// Example usage (error handling omitted):
+//
+//	w, _ := NewWriter(
+//	    WithBaseWriter(output),
+//	    WithSampleRate(44100),
+//	    WithChannelCount(1),
+//	    WithSampleType(SampleType.Int16),
+//	)
+//	defer func() {
+//	    _ = w.Flush()
+//	}
+//	var audioData []int16 = ...
+//	_ = w.WriteInterleavedInt16(audioData)
 type Writer struct {
 
 	// Handles writes to the final .wav file (or buffer)
@@ -40,6 +60,9 @@ type Writer struct {
 	dataBytes uint32
 }
 
+// NewWriter is a constructor function, used to create Writer instances. The
+// WithSampleType, WithSampleRate, and WithBaseWriter functional arguments are
+// required. All others are optional.
 func NewWriter(
 	opts ...WriterOption,
 ) (*Writer, error) {
@@ -88,6 +111,9 @@ func NewWriter(
 	}, nil
 }
 
+// WriteInterleavedUint8 is used to add uint8 audio samples. Audio data is
+// assumed to be interleaved across channels. WriteInterleavedUint8 will fail
+// if the SampleType of the Writer is not set to SampleTypeUint8.
 func (w *Writer) WriteInterleavedUint8(data []uint8) error {
 	if w.sampleType != SampleTypeUint8 {
 		return ErrWriterExpectedUint8
@@ -102,6 +128,9 @@ func (w *Writer) WriteInterleavedUint8(data []uint8) error {
 	return nil
 }
 
+// WriteInterleavedInt16 is used to add int16 audio samples. Audio data is
+// assumed to be interleaved across channels. WriteInterleavedInt16 will fail
+// if the SampleType of the Writer is not set to SampleTypeInt16.
 func (w *Writer) WriteInterleavedInt16(data []int16) error {
 
 	if w.sampleType != SampleTypeInt16 {
@@ -117,6 +146,9 @@ func (w *Writer) WriteInterleavedInt16(data []int16) error {
 	return nil
 }
 
+// WriteInterleavedInt24 is used to add int24 audio samples. Audio data is
+// assumed to be interleaved across channels. WriteInterleavedInt24 will fail
+// if the SampleType of the Writer is not set to SampleTypeInt24.
 func (w *Writer) WriteInterleavedInt24(data []int32) error {
 
 	if w.sampleType != SampleTypeInt24 {
@@ -134,6 +166,9 @@ func (w *Writer) WriteInterleavedInt24(data []int32) error {
 	return nil
 }
 
+// WriteInterleavedInt32 is used to add int32 audio samples. Audio data is
+// assumed to be interleaved across channels. WriteInterleavedInt32 will fail
+// if the SampleType of the Writer is not set to SampleTypeInt32.
 func (w *Writer) WriteInterleavedInt32(data []int32) error {
 
 	if w.sampleType != SampleTypeInt32 {
@@ -149,6 +184,9 @@ func (w *Writer) WriteInterleavedInt32(data []int32) error {
 	return nil
 }
 
+// WriteInterleavedFloat32 is used to add float32 audio samples. Audio data is
+// assumed to be interleaved across channels. WriteInterleavedFloat32 will fail
+// if the SampleType of the Writer is not set to SampleTypeFloat32.
 func (w *Writer) WriteInterleavedFloat32(data []float32) error {
 
 	if w.sampleType != SampleTypeFloat32 {
@@ -164,6 +202,9 @@ func (w *Writer) WriteInterleavedFloat32(data []float32) error {
 	return nil
 }
 
+// WriteInterleavedFloat64 is used to add float64 audio samples. Audio data is
+// assumed to be interleaved across channels. WriteInterleavedFloat64 will fail
+// if the SampleType of the Writer is not set to SampleTypeFloat64.
 func (w *Writer) WriteInterleavedFloat64(data []float64) error {
 
 	if w.sampleType != SampleTypeFloat64 {
@@ -225,6 +266,17 @@ func (w *Writer) writeInterleavedInt24(data []int32) error {
 	return nil
 }
 
+// Flush rewinds the underlying io.WriteSeeker back to the beginning of the
+// file and overwrites the existing .wav file header. Flush must be called
+// after all audio samples have been written to ensure that the file's metadata
+// is up-to-date.
+//
+// Flush will commonly be placed in a defer statement, but this isn't a
+// requirement of the API.
+//
+// Flush will fail if an invalid number of samples are written (e.g. an odd
+// number of samples are written when the Writer is configured for two
+// channels) with an ErrWriterInvalidByteCount.
 func (w *Writer) Flush() error {
 
 	// Validate that the total number of bytes written to the data chunk makes
@@ -339,8 +391,12 @@ type writerOptions struct {
 	sampleType   SampleType
 }
 
+// WriterOption is a functional argument used as part of NewWriter.
 type WriterOption func(*writerOptions) error
 
+// WithBaseWriter is used to set the base writer as part of NewWriter. The base
+// writer can be an os.File or any other type that implements the
+// io.WriteSeeker interface in the Go standard library.
 func WithBaseWriter(ws io.WriteSeeker) WriterOption {
 	return func(opts *writerOptions) error {
 		opts.baseWriter = ws
@@ -348,6 +404,9 @@ func WithBaseWriter(ws io.WriteSeeker) WriterOption {
 	}
 }
 
+// WithSampleRate is used to set the sample rate as part of NewWriter. The
+// sample rate is measured in samples per second. Common values are 44100 Hz
+// (normal for CD audio) and 48000 Hz (common for movies).
 func WithSampleRate(sampleRate uint32) WriterOption {
 	return func(opts *writerOptions) error {
 		opts.sampleRate = sampleRate
@@ -355,6 +414,10 @@ func WithSampleRate(sampleRate uint32) WriterOption {
 	}
 }
 
+// WithChannelCount is used to set the number of audio channels as part of
+// NewWriter. A channel count of 1 will be assumed as the default unless
+// explicitly overwritten by the user. Note that all WriteInterleavedXXX APIs
+// assume that samples are interleaved across channels (as opposed to strided).
 func WithChannelCount(channelCount uint16) WriterOption {
 	return func(opts *writerOptions) error {
 		opts.channelCount = channelCount
@@ -362,6 +425,11 @@ func WithChannelCount(channelCount uint16) WriterOption {
 	}
 }
 
+// WithSampleType is used to set the data type for audio data as part of
+// NewWriter. The sample type determines which of the WriteInterleavedXXX APIs
+// can be used. Note that it is the caller's responsibility to ensure data is
+// in the correct format, though the quantizers/dequantizers in the core
+// package can help with that process.
 func WithSampleType(sampleType SampleType) WriterOption {
 	return func(opts *writerOptions) error {
 		if !sampleType.IsValid() {
