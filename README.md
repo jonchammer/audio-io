@@ -42,12 +42,12 @@ func main() {
 	}()
 	
 	// Create a wave.Writer that wraps 'f'
-    w, _ := wave.NewWriter(
+	w, _ := wave.NewWriter(
 		f, wave.SampleTypeInt16, uint32(44100), wave.WithChannelCount(2),
-    )
+	)
 	defer func() {
 		_ = w.Flush()
-    }()
+	}()
 	
 	// Write your audio samples to the writer
 	var samples []int16 = ...
