@@ -68,10 +68,7 @@ func saveAsWave(
 
 	// Create a writer and set the properties we care about
 	w, err := wave.NewWriter(
-		wave.WithBaseWriter(out),
-		wave.WithChannelCount(uint16(channelCount)),
-		wave.WithSampleRate(uint32(sampleRate)),
-		wave.WithSampleType(format),
+		out, format, uint32(sampleRate), wave.WithChannelCount(uint16(channelCount)),
 	)
 	if err != nil {
 		return err
