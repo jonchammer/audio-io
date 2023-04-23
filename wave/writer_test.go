@@ -66,7 +66,7 @@ func TestWriter_Flush_Normal(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedFloat32([]float32{0.0, 1.0, 0.0, -1.0})
+	err = w.WriteFloat32([]float32{0.0, 1.0, 0.0, -1.0})
 	require.NoError(t, err)
 
 	err = w.Flush()
@@ -93,7 +93,7 @@ func TestWriter_Flush_WithPadding(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedUint8([]byte{0, 1, 2})
+	err = w.WriteUint8([]byte{0, 1, 2})
 	require.NoError(t, err)
 
 	err = w.Flush()
@@ -110,7 +110,7 @@ func TestWriter_Flush_InvalidByteCount(t *testing.T) {
 	require.NoError(t, err)
 
 	// 3 bytes with 2 channels is invalid
-	err = w.WriteInterleavedUint8([]byte{0, 1, 2})
+	err = w.WriteUint8([]byte{0, 1, 2})
 	require.NoError(t, err)
 
 	err = w.Flush()
@@ -118,163 +118,163 @@ func TestWriter_Flush_InvalidByteCount(t *testing.T) {
 }
 
 // ------------------------------------------------------------------------- //
-// WriteInterleavedUint8
+// WriteUint8
 // ------------------------------------------------------------------------- //
 
-func TestWriter_WriteInterleavedUint8_Normal(t *testing.T) {
+func TestWriter_WriteUint8_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedUint8([]byte{0, 1, 2, 3})
+	err = w.WriteUint8([]byte{0, 1, 2, 3})
 	require.NoError(t, err)
 	require.Greater(t, baseWriter.Len(), 0)
 }
 
-func TestWriter_WriteInterleavedUint8_InvalidSampleType(t *testing.T) {
+func TestWriter_WriteUint8_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedUint8([]byte{0, 1, 2, 3})
+	err = w.WriteUint8([]byte{0, 1, 2, 3})
 	require.ErrorIs(t, err, ErrWriterExpectedUint8)
 }
 
 // ------------------------------------------------------------------------- //
-// WriteInterleavedInt16
+// WriteInt16
 // ------------------------------------------------------------------------- //
 
-func TestWriter_WriteInterleavedInt16_Normal(t *testing.T) {
+func TestWriter_WriteInt16_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeInt16, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedInt16([]int16{0, 32737, 0, -32768})
+	err = w.WriteInt16([]int16{0, 32737, 0, -32768})
 	require.NoError(t, err)
 	require.Greater(t, baseWriter.Len(), 0)
 }
 
-func TestWriter_WriteInterleavedInt16_InvalidSampleType(t *testing.T) {
+func TestWriter_WriteInt16_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedInt16([]int16{0, 32737, 0, -32768})
+	err = w.WriteInt16([]int16{0, 32737, 0, -32768})
 	require.ErrorIs(t, err, ErrWriterExpectedInt16)
 }
 
 // ------------------------------------------------------------------------- //
-// WriteInterleavedInt24
+// WriteInt24
 // ------------------------------------------------------------------------- //
 
-func TestWriter_WriteInterleavedInt24_Normal(t *testing.T) {
+func TestWriter_WriteInt24_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeInt24, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedInt24([]int32{0, 8388607, 0, -8388608})
+	err = w.WriteInt24([]int32{0, 8388607, 0, -8388608})
 	require.NoError(t, err)
 	require.Greater(t, baseWriter.Len(), 0)
 }
 
-func TestWriter_WriteInterleavedInt24_InvalidSampleType(t *testing.T) {
+func TestWriter_WriteInt24_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedInt24([]int32{0, 8388607, 0, -8388608})
+	err = w.WriteInt24([]int32{0, 8388607, 0, -8388608})
 	require.ErrorIs(t, err, ErrWriterExpectedInt24)
 }
 
 // ------------------------------------------------------------------------- //
-// WriteInterleavedInt32
+// WriteInt32
 // ------------------------------------------------------------------------- //
 
-func TestWriter_WriteInterleavedInt32_Normal(t *testing.T) {
+func TestWriter_WriteInt32_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeInt32, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedInt32([]int32{0, 2147483647, 0, -2147483648})
+	err = w.WriteInt32([]int32{0, 2147483647, 0, -2147483648})
 	require.NoError(t, err)
 	require.Greater(t, baseWriter.Len(), 0)
 }
 
-func TestWriter_WriteInterleavedInt32_InvalidSampleType(t *testing.T) {
+func TestWriter_WriteInt32_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedInt32([]int32{0, 2147483647, 0, -2147483648})
+	err = w.WriteInt32([]int32{0, 2147483647, 0, -2147483648})
 	require.ErrorIs(t, err, ErrWriterExpectedInt32)
 }
 
 // ------------------------------------------------------------------------- //
-// WriteInterleavedFloat32
+// WriteFloat32
 // ------------------------------------------------------------------------- //
 
-func TestWriter_WriteInterleavedFloat32_Normal(t *testing.T) {
+func TestWriter_WriteFloat32_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedFloat32([]float32{0.0, 1.0, 0.0, -1.0})
+	err = w.WriteFloat32([]float32{0.0, 1.0, 0.0, -1.0})
 	require.NoError(t, err)
 	require.Greater(t, baseWriter.Len(), 0)
 }
 
-func TestWriter_WriteInterleavedFloat32_InvalidSampleType(t *testing.T) {
+func TestWriter_WriteFloat32_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedFloat32([]float32{0.0, 1.0, 0.0, -1.0})
+	err = w.WriteFloat32([]float32{0.0, 1.0, 0.0, -1.0})
 	require.ErrorIs(t, err, ErrWriterExpectedFloat32)
 }
 
 // ------------------------------------------------------------------------- //
-// WriteInterleavedFloat64
+// WriteFloat64
 // ------------------------------------------------------------------------- //
 
-func TestWriter_WriteInterleavedFloat64_Normal(t *testing.T) {
+func TestWriter_WriteFloat64_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeFloat64, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedFloat64([]float64{0.0, 1.0, 0.0, -1.0})
+	err = w.WriteFloat64([]float64{0.0, 1.0, 0.0, -1.0})
 	require.NoError(t, err)
 	require.Greater(t, baseWriter.Len(), 0)
 }
 
-func TestWriter_WriteInterleavedFloat64_InvalidSampleType(t *testing.T) {
+func TestWriter_WriteFloat64_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
 		baseWriter, SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedFloat64([]float64{0.0, 1.0, 0.0, -1.0})
+	err = w.WriteFloat64([]float64{0.0, 1.0, 0.0, -1.0})
 	require.ErrorIs(t, err, ErrWriterExpectedFloat64)
 }
