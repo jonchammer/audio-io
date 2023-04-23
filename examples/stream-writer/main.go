@@ -30,10 +30,7 @@ func main() {
 
 	// 2. Create a wave writer and set the properties we care about
 	w, err := wave.NewWriter(
-		wave.WithBaseWriter(f),
-		wave.WithChannelCount(uint16(1)),
-		wave.WithSampleRate(uint32(sampleRate)),
-		wave.WithSampleType(wave.SampleTypeInt24),
+		f, wave.SampleTypeInt24, uint32(sampleRate),
 	)
 	if err != nil {
 		failF(err)

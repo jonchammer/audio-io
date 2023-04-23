@@ -43,10 +43,7 @@ func main() {
 	
 	// Create a wave.Writer that wraps 'f'
     w, _ := wave.NewWriter(
-        wave.WithBaseWriter(f),
-        wave.WithChannelCount(uint16(1)),
-        wave.WithSampleRate(uint32(44100)),
-        wave.WithSampleType(wave.SampleTypeInt16),
+		f, wave.SampleTypeInt16, uint32(44100), wave.WithChannelCount(2),
     )
 	defer func() {
 		_ = w.Flush()
@@ -58,12 +55,14 @@ func main() {
 }
 ```
 
-`wave.NewWriter` provides functional arguments that allow the caller to set the 
-number of channels, the sample rate, and the expected data type for the audio
-samples. `wave.Writer` supports the `uint8`, `int16`, `int24`, and `int32` PCM 
-formats as well as the `float32` and `float64` IEEE formats. The base writer,
-sample rate, and sample type are all required, but the channel count will be
-default to 1 if not otherwise specified.
+`wave.NewWriter` requires that the caller provide a base writer, the expected
+data type for the audio samples, and the sample rate. `wave.Writer` supports 
+the `uint8`, `int16`, `int24`, and `int32` PCM formats as well as the `float32` 
+and `float64` IEEE formats. 
+
+Other optional writer properties can be set via functional arguments. In the 
+example above, the channel count has been set, overriding the default value 
+of 1.
 
 ### Working with multiple channels
 The API assumes that all samples are *interleaved* (as opposed to *strided*),

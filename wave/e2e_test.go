@@ -22,10 +22,7 @@ func TestE2E_Empty(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeUint8),
-		WithChannelCount(2),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeUint8, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -65,10 +62,7 @@ func TestE2E_Uint8_Normal(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeUint8),
-		WithChannelCount(2),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeUint8, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -107,10 +101,7 @@ func TestE2E_Uint8_Padding(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeUint8),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
@@ -149,10 +140,7 @@ func TestE2E_Uint8_Padding(t *testing.T) {
 func TestE2E_Uint8_Extensible(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeUint8),
-		WithChannelCount(4),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeUint8, 44100, WithChannelCount(4),
 	)
 	require.NoError(t, err)
 
@@ -206,10 +194,7 @@ func TestE2E_Uint8_Extensible(t *testing.T) {
 func TestE2E_Int16_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeInt16),
-		WithChannelCount(2),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeInt16, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -247,10 +232,7 @@ func TestE2E_Int16_Normal(t *testing.T) {
 func TestE2E_Int16_Extensible(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeInt16),
-		WithChannelCount(4),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeInt16, 44100, WithChannelCount(4),
 	)
 	require.NoError(t, err)
 
@@ -312,10 +294,7 @@ func TestE2E_Int24_Normal(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeInt24),
-		WithChannelCount(2),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeInt24, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -372,10 +351,7 @@ func TestE2E_Int24_Padding(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeInt24),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeInt24, 44100,
 	)
 	require.NoError(t, err)
 
@@ -432,10 +408,7 @@ func TestE2E_Int24_Padding(t *testing.T) {
 func TestE2E_Int32_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeInt32),
-		WithChannelCount(2),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeInt32, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -496,10 +469,7 @@ func TestE2E_Int32_Normal(t *testing.T) {
 func TestE2E_Float32_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeFloat32),
-		WithChannelCount(2),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat32, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -544,10 +514,7 @@ func TestE2E_Float32_Extensible(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeFloat32),
-		WithChannelCount(4),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat32, 44100, WithChannelCount(4),
 	)
 	require.NoError(t, err)
 
@@ -609,10 +576,7 @@ func TestE2E_Float64_Normal(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeFloat64),
-		WithChannelCount(2),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat64, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -657,10 +621,7 @@ func TestE2E_Float64_Extensible(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeFloat64),
-		WithChannelCount(4),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat64, 44100, WithChannelCount(4),
 	)
 	require.NoError(t, err)
 

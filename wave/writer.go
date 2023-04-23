@@ -7,9 +7,6 @@ import (
 )
 
 var (
-	ErrWriterMissingSampleType = errors.New("sample type is required but was not provided")
-	ErrWriterMissingSampleRate = errors.New("sample rate is required but was not provided")
-	ErrWriterMissingBaseWriter = errors.New("base writer is required but was not provided")
 	ErrWriterInvalidSampleType = errors.New("provided sample type is invalid")
 	ErrWriterInvalidByteCount  = errors.New("an invalid number of bytes were written before the writer was closed")
 
@@ -31,10 +28,7 @@ var (
 // Example usage (error handling omitted):
 //
 //	w, _ := NewWriter(
-//	    WithBaseWriter(output),
-//	    WithSampleRate(44100),
-//	    WithChannelCount(1),
-//	    WithSampleType(SampleType.Int16),
+//	    output, SampleTypeInt16, 44100, WithChannelCount(2),
 //	)
 //	defer func() {
 //	    _ = w.Flush()
@@ -60,13 +54,32 @@ type Writer struct {
 	dataBytes uint32
 }
 
-// NewWriter is a constructor function, used to create Writer instances. The
-// WithSampleType, WithSampleRate, and WithBaseWriter functional arguments are
-// required. All others are optional.
+// NewWriter is a constructor function, used to create Writer instances.
+//   - baseWriter - The base writer can be an os.File or any other type that
+//     implements the io.WriteSeeker interface in the Go standard library.
+//   - sampleType - The sample type determines which of the WriteInterleavedXXX
+//     APIs can be used. Note that it is the caller's responsibility to ensure
+//     data is in the correct format, though the quantizers/dequantizers in the
+//     core package can help with that process.
+//   - sampleRate - The sample rate is measured in samples per second. Common
+//     values are 44100 Hz (normal for CD audio) and 48000 Hz (common for
+//     movies).
+//
+// WriterOptions can be used to provide additional optional inputs (e.g.
+// setting the number of channels).
 func NewWriter(
+	baseWriter io.WriteSeeker,
+	sampleType SampleType,
+	sampleRate uint32,
 	opts ...WriterOption,
 ) (*Writer, error) {
 
+	// Validate the required inputs
+	if !sampleType.IsValid() {
+		return nil, ErrWriterInvalidSampleType
+	}
+
+	// Process any optional inputs
 	options := &writerOptions{
 		channelCount: 1,
 	}
@@ -77,20 +90,9 @@ func NewWriter(
 		}
 	}
 
-	// Validate that required fields have been set
-	if options.sampleType == SampleType(0) {
-		return nil, ErrWriterMissingSampleType
-	}
-	if options.sampleRate == 0 {
-		return nil, ErrWriterMissingSampleRate
-	}
-	if options.baseWriter == nil {
-		return nil, ErrWriterMissingBaseWriter
-	}
-
 	// The user-provided fields will determine the format chunk fields
 	formatChunkData := NewFormatChunkData(
-		options.channelCount, options.sampleRate, options.sampleType,
+		options.channelCount, sampleRate, sampleType,
 	)
 
 	// It's generally agreed that regular PCM data doesn't require a 'fact'
@@ -103,8 +105,8 @@ func NewWriter(
 	}
 
 	return &Writer{
-		baseWriter:      options.baseWriter,
-		sampleType:      options.sampleType,
+		baseWriter:      baseWriter,
+		sampleType:      sampleType,
 		formatChunkData: formatChunkData,
 		factChunkData:   factChunkData,
 		dataBytes:       0,
@@ -385,34 +387,11 @@ func (w *Writer) getRootChunk() Chunk {
 // ------------------------------------------------------------------------- //
 
 type writerOptions struct {
-	baseWriter   io.WriteSeeker
-	sampleRate   uint32
 	channelCount uint16
-	sampleType   SampleType
 }
 
 // WriterOption is a functional argument used as part of NewWriter.
 type WriterOption func(*writerOptions) error
-
-// WithBaseWriter is used to set the base writer as part of NewWriter. The base
-// writer can be an os.File or any other type that implements the
-// io.WriteSeeker interface in the Go standard library.
-func WithBaseWriter(ws io.WriteSeeker) WriterOption {
-	return func(opts *writerOptions) error {
-		opts.baseWriter = ws
-		return nil
-	}
-}
-
-// WithSampleRate is used to set the sample rate as part of NewWriter. The
-// sample rate is measured in samples per second. Common values are 44100 Hz
-// (normal for CD audio) and 48000 Hz (common for movies).
-func WithSampleRate(sampleRate uint32) WriterOption {
-	return func(opts *writerOptions) error {
-		opts.sampleRate = sampleRate
-		return nil
-	}
-}
 
 // WithChannelCount is used to set the number of audio channels as part of
 // NewWriter. A channel count of 1 will be assumed as the default unless
@@ -421,22 +400,6 @@ func WithSampleRate(sampleRate uint32) WriterOption {
 func WithChannelCount(channelCount uint16) WriterOption {
 	return func(opts *writerOptions) error {
 		opts.channelCount = channelCount
-		return nil
-	}
-}
-
-// WithSampleType is used to set the data type for audio data as part of
-// NewWriter. The sample type determines which of the WriteInterleavedXXX APIs
-// can be used. Note that it is the caller's responsibility to ensure data is
-// in the correct format, though the quantizers/dequantizers in the core
-// package can help with that process.
-func WithSampleType(sampleType SampleType) WriterOption {
-	return func(opts *writerOptions) error {
-		if !sampleType.IsValid() {
-			return ErrWriterInvalidSampleType
-		}
-
-		opts.sampleType = sampleType
 		return nil
 	}
 }

@@ -1,5 +1,5 @@
 // Package wave contains types and functions that facilitate working with
-// .wave files.
+// Wave (.wav) files.
 package wave
 
 // References

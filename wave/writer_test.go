@@ -14,10 +14,7 @@ import (
 func TestNewWriter_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeUint8),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
@@ -33,10 +30,7 @@ func TestNewWriter_Normal(t *testing.T) {
 func TestNewWriter_WithFactChunk(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeFloat32),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -52,37 +46,11 @@ func TestNewWriter_WithFactChunk(t *testing.T) {
 
 func TestNewWriter_Errors(t *testing.T) {
 
-	// Missing sample type
 	baseWriter := &bytes.Writer{}
-	_, err := NewWriter(
-		WithSampleRate(44100),
-		WithChannelCount(2),
-		WithBaseWriter(baseWriter),
-	)
-	require.ErrorIs(t, err, ErrWriterMissingSampleType)
-
-	// Missing sample rate
-	_, err = NewWriter(
-		WithSampleType(SampleTypeUint8),
-		WithChannelCount(2),
-		WithBaseWriter(baseWriter),
-	)
-	require.ErrorIs(t, err, ErrWriterMissingSampleRate)
-
-	// Missing base writer
-	_, err = NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleTypeUint8),
-		WithChannelCount(2),
-	)
-	require.ErrorIs(t, err, ErrWriterMissingBaseWriter)
 
 	// Invalid option (e.g. bad sample type)
-	_, err = NewWriter(
-		WithSampleRate(44100),
-		WithSampleType(SampleType(-1)),
-		WithChannelCount(2),
-		WithBaseWriter(baseWriter),
+	_, err := NewWriter(
+		baseWriter, SampleType(-1), 44100,
 	)
 	require.ErrorIs(t, err, ErrWriterInvalidSampleType)
 }
@@ -94,10 +62,7 @@ func TestNewWriter_Errors(t *testing.T) {
 func TestWriter_Flush_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeFloat32),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -112,10 +77,7 @@ func TestWriter_Flush_Normal(t *testing.T) {
 func TestWriter_Flush_NoData(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeUint8),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
@@ -127,10 +89,7 @@ func TestWriter_Flush_NoData(t *testing.T) {
 func TestWriter_Flush_WithPadding(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeUint8),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
@@ -145,10 +104,8 @@ func TestWriter_Flush_WithPadding(t *testing.T) {
 func TestWriter_Flush_InvalidByteCount(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeUint8),
-		WithSampleRate(44100),
+		baseWriter, SampleTypeUint8, 44100,
 		WithChannelCount(2),
-		WithBaseWriter(baseWriter),
 	)
 	require.NoError(t, err)
 
@@ -167,10 +124,7 @@ func TestWriter_Flush_InvalidByteCount(t *testing.T) {
 func TestWriter_WriteInterleavedUint8_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeUint8),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
@@ -182,10 +136,7 @@ func TestWriter_WriteInterleavedUint8_Normal(t *testing.T) {
 func TestWriter_WriteInterleavedUint8_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeFloat32),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -200,10 +151,7 @@ func TestWriter_WriteInterleavedUint8_InvalidSampleType(t *testing.T) {
 func TestWriter_WriteInterleavedInt16_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeInt16),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeInt16, 44100,
 	)
 	require.NoError(t, err)
 
@@ -215,10 +163,7 @@ func TestWriter_WriteInterleavedInt16_Normal(t *testing.T) {
 func TestWriter_WriteInterleavedInt16_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeFloat32),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -233,10 +178,7 @@ func TestWriter_WriteInterleavedInt16_InvalidSampleType(t *testing.T) {
 func TestWriter_WriteInterleavedInt24_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeInt24),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeInt24, 44100,
 	)
 	require.NoError(t, err)
 
@@ -248,10 +190,7 @@ func TestWriter_WriteInterleavedInt24_Normal(t *testing.T) {
 func TestWriter_WriteInterleavedInt24_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeFloat32),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -266,10 +205,7 @@ func TestWriter_WriteInterleavedInt24_InvalidSampleType(t *testing.T) {
 func TestWriter_WriteInterleavedInt32_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeInt32),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeInt32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -281,10 +217,7 @@ func TestWriter_WriteInterleavedInt32_Normal(t *testing.T) {
 func TestWriter_WriteInterleavedInt32_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeFloat32),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -299,10 +232,7 @@ func TestWriter_WriteInterleavedInt32_InvalidSampleType(t *testing.T) {
 func TestWriter_WriteInterleavedFloat32_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeFloat32),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -314,10 +244,7 @@ func TestWriter_WriteInterleavedFloat32_Normal(t *testing.T) {
 func TestWriter_WriteInterleavedFloat32_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeUint8),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
@@ -332,10 +259,7 @@ func TestWriter_WriteInterleavedFloat32_InvalidSampleType(t *testing.T) {
 func TestWriter_WriteInterleavedFloat64_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeFloat64),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeFloat64, 44100,
 	)
 	require.NoError(t, err)
 
@@ -347,10 +271,7 @@ func TestWriter_WriteInterleavedFloat64_Normal(t *testing.T) {
 func TestWriter_WriteInterleavedFloat64_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		WithSampleType(SampleTypeUint8),
-		WithSampleRate(44100),
-		WithChannelCount(1),
-		WithBaseWriter(baseWriter),
+		baseWriter, SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
