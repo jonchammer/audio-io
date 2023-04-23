@@ -1,3 +1,5 @@
+// Package wave contains types and functions that facilitate working with
+// .wave files.
 package wave
 
 // References
@@ -8,6 +10,8 @@ package wave
 // FormatCode
 // ------------------------------------------------------------------------- //
 
+// FormatCode is an enum defined by the Wave specification that dictates how
+// audio samples are to be interpreted.
 type FormatCode uint16
 
 const (
@@ -20,6 +24,8 @@ const (
 // SampleType
 // ------------------------------------------------------------------------- //
 
+// SampleType represents the type of audio data that can be accepted by a
+// particular Writer.
 type SampleType int
 
 const (
