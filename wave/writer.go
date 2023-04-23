@@ -20,10 +20,10 @@ var (
 
 // A Writer is used to generate .wav files from raw audio samples. A Writer
 // is created using NewWriter, and samples are written using one of the
-// WriteInterleavedXXX methods. Samples can be written over the span of
-// multiple calls (e.g. to allow the caller to generate audio samples on the
-// fly). After all audio samples are written, the caller is expected to call
-// Flush(). Flush() ensures that all wave metadata is set properly.
+// WriteXXX methods. Samples can be written over the span of multiple calls
+// (e.g. to allow the caller to generate audio samples on the fly). After all
+// audio samples are written, the caller is expected to call Flush(). Flush()
+// ensures that all wave metadata is set properly.
 //
 // Example usage (error handling omitted):
 //
@@ -34,7 +34,7 @@ var (
 //	    _ = w.Flush()
 //	}
 //	var audioData []int16 = ...
-//	_ = w.WriteInterleavedInt16(audioData)
+//	_ = w.WriteInt16(audioData)
 type Writer struct {
 
 	// Handles writes to the final .wav file (or buffer)
@@ -57,10 +57,10 @@ type Writer struct {
 // NewWriter is a constructor function, used to create Writer instances.
 //   - baseWriter - The base writer can be an os.File or any other type that
 //     implements the io.WriteSeeker interface in the Go standard library.
-//   - sampleType - The sample type determines which of the WriteInterleavedXXX
-//     APIs can be used. Note that it is the caller's responsibility to ensure
-//     data is in the correct format, though the quantizers/dequantizers in the
-//     core package can help with that process.
+//   - sampleType - The sample type determines which of the WriteXXX APIs can
+//     be used. Note that it is the caller's responsibility to ensure data is
+//     in the correct format, though the quantizers/dequantizers in the core
+//     package can help with that process.
 //   - sampleRate - The sample rate is measured in samples per second. Common
 //     values are 44100 Hz (normal for CD audio) and 48000 Hz (common for
 //     movies).
@@ -113,15 +113,16 @@ func NewWriter(
 	}, nil
 }
 
-// WriteInterleavedUint8 is used to add uint8 audio samples. Audio data is
-// assumed to be interleaved across channels. WriteInterleavedUint8 will fail
-// if the SampleType of the Writer is not set to SampleTypeUint8.
-func (w *Writer) WriteInterleavedUint8(data []uint8) error {
+// WriteUint8 is used to add uint8 audio samples. Audio data is assumed to be
+// organized into samples consisting of multiple blocks, one block per channel.
+// WriteUint8 will fail if the SampleType of the Writer is not set to
+// SampleTypeUint8.
+func (w *Writer) WriteUint8(data []uint8) error {
 	if w.sampleType != SampleTypeUint8 {
 		return ErrWriterExpectedUint8
 	}
 
-	err := w.writeInterleaved(data)
+	err := w.write(data)
 	if err != nil {
 		return err
 	}
@@ -130,16 +131,17 @@ func (w *Writer) WriteInterleavedUint8(data []uint8) error {
 	return nil
 }
 
-// WriteInterleavedInt16 is used to add int16 audio samples. Audio data is
-// assumed to be interleaved across channels. WriteInterleavedInt16 will fail
-// if the SampleType of the Writer is not set to SampleTypeInt16.
-func (w *Writer) WriteInterleavedInt16(data []int16) error {
+// WriteInt16 is used to add uint8 audio samples. Audio data is assumed to be
+// organized into samples consisting of multiple blocks, one block per channel.
+// WriteInt16 will fail if the SampleType of the Writer is not set to
+// SampleTypeInt16.
+func (w *Writer) WriteInt16(data []int16) error {
 
 	if w.sampleType != SampleTypeInt16 {
 		return ErrWriterExpectedInt16
 	}
 
-	err := w.writeInterleaved(data)
+	err := w.write(data)
 	if err != nil {
 		return err
 	}
@@ -148,10 +150,17 @@ func (w *Writer) WriteInterleavedInt16(data []int16) error {
 	return nil
 }
 
-// WriteInterleavedInt24 is used to add int24 audio samples. Audio data is
-// assumed to be interleaved across channels. WriteInterleavedInt24 will fail
-// if the SampleType of the Writer is not set to SampleTypeInt24.
-func (w *Writer) WriteInterleavedInt24(data []int32) error {
+// WriteInt24 is used to add uint8 audio samples. Audio data is assumed to be
+// organized into samples consisting of multiple blocks, one block per channel.
+// WriteInt24 will fail if the SampleType of the Writer is not set to
+// SampleTypeInt24.
+//
+// NOTE: most programming languages (including Go) don't provide a native
+// 24-bit integer type, so we usually use `int32` as a container type with the
+// understanding that values are expected to fall in the range
+// [-8388608, 8388607]. There is special logic where needed to pack and unpack
+// values as 24-bit integers.
+func (w *Writer) WriteInt24(data []int32) error {
 
 	if w.sampleType != SampleTypeInt24 {
 		return ErrWriterExpectedInt24
@@ -159,7 +168,7 @@ func (w *Writer) WriteInterleavedInt24(data []int32) error {
 
 	// NOTE: Specialized logic is needed for int24 compared to the other data
 	// types.
-	err := w.writeInterleavedInt24(data)
+	err := w.writeInt24(data)
 	if err != nil {
 		return err
 	}
@@ -168,16 +177,17 @@ func (w *Writer) WriteInterleavedInt24(data []int32) error {
 	return nil
 }
 
-// WriteInterleavedInt32 is used to add int32 audio samples. Audio data is
-// assumed to be interleaved across channels. WriteInterleavedInt32 will fail
-// if the SampleType of the Writer is not set to SampleTypeInt32.
-func (w *Writer) WriteInterleavedInt32(data []int32) error {
+// WriteInt32 is used to add uint8 audio samples. Audio data is assumed to be
+// organized into samples consisting of multiple blocks, one block per channel.
+// WriteInt32 will fail if the SampleType of the Writer is not set to
+// SampleTypeInt32.
+func (w *Writer) WriteInt32(data []int32) error {
 
 	if w.sampleType != SampleTypeInt32 {
 		return ErrWriterExpectedInt32
 	}
 
-	err := w.writeInterleaved(data)
+	err := w.write(data)
 	if err != nil {
 		return err
 	}
@@ -186,16 +196,17 @@ func (w *Writer) WriteInterleavedInt32(data []int32) error {
 	return nil
 }
 
-// WriteInterleavedFloat32 is used to add float32 audio samples. Audio data is
-// assumed to be interleaved across channels. WriteInterleavedFloat32 will fail
-// if the SampleType of the Writer is not set to SampleTypeFloat32.
-func (w *Writer) WriteInterleavedFloat32(data []float32) error {
+// WriteFloat32 is used to add uint8 audio samples. Audio data is assumed to be
+// organized into samples consisting of multiple blocks, one block per channel.
+// WriteFloat32 will fail if the SampleType of the Writer is not set to
+// SampleTypeFloat32.
+func (w *Writer) WriteFloat32(data []float32) error {
 
 	if w.sampleType != SampleTypeFloat32 {
 		return ErrWriterExpectedFloat32
 	}
 
-	err := w.writeInterleaved(data)
+	err := w.write(data)
 	if err != nil {
 		return err
 	}
@@ -204,16 +215,17 @@ func (w *Writer) WriteInterleavedFloat32(data []float32) error {
 	return nil
 }
 
-// WriteInterleavedFloat64 is used to add float64 audio samples. Audio data is
-// assumed to be interleaved across channels. WriteInterleavedFloat64 will fail
-// if the SampleType of the Writer is not set to SampleTypeFloat64.
-func (w *Writer) WriteInterleavedFloat64(data []float64) error {
+// WriteFloat64 is used to add uint8 audio samples. Audio data is assumed to be
+// organized into samples consisting of multiple blocks, one block per channel.
+// WriteFloat64 will fail if the SampleType of the Writer is not set to
+// SampleTypeFloat64.
+func (w *Writer) WriteFloat64(data []float64) error {
 
 	if w.sampleType != SampleTypeFloat64 {
 		return ErrWriterExpectedFloat64
 	}
 
-	err := w.writeInterleaved(data)
+	err := w.write(data)
 	if err != nil {
 		return err
 	}
@@ -222,9 +234,9 @@ func (w *Writer) WriteInterleavedFloat64(data []float64) error {
 	return nil
 }
 
-// writeInterleaved is a common helper for most of the WriteInterleavedXXX
+// write is a common helper for most of the WriteXXX
 // methods declared above.
-func (w *Writer) writeInterleaved(data any) error {
+func (w *Writer) write(data any) error {
 	if w.dataBytes == 0 {
 		err := w.writePreamble()
 		if err != nil {
@@ -245,9 +257,9 @@ func (w *Writer) writeInterleaved(data any) error {
 	return nil
 }
 
-// writeInterleavedInt24 is a specialization of writeInterleaved to be used
+// writeInt24 is a specialization of write to be used
 // int24 data.
-func (w *Writer) writeInterleavedInt24(data []int32) error {
+func (w *Writer) writeInt24(data []int32) error {
 	if w.dataBytes == 0 {
 		err := w.writePreamble()
 		if err != nil {
@@ -395,8 +407,11 @@ type WriterOption func(*writerOptions) error
 
 // WithChannelCount is used to set the number of audio channels as part of
 // NewWriter. A channel count of 1 will be assumed as the default unless
-// explicitly overwritten by the user. Note that all WriteInterleavedXXX APIs
-// assume that samples are interleaved across channels (as opposed to strided).
+// explicitly overwritten by the user.
+//
+// Note that all WriteXXX APIs assume that samples are contiguous,
+// so all blocks for a given sample should be placed next to one other in
+// memory.
 func WithChannelCount(channelCount uint16) WriterOption {
 	return func(opts *writerOptions) error {
 		opts.channelCount = channelCount

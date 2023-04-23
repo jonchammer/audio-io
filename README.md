@@ -35,13 +35,17 @@ import (
 )
 
 func main() {
-	// Create a file
+	// NOTE: This example ignores error handling for the sake of brevity.
+	
+	// Create a file to store our formatted audio data
 	f, _ := os.Create("example.wav")
 	defer func() {
 		_ = f.Close()
 	}()
 	
-	// Create a wave.Writer that wraps 'f'
+	// Create a wave.Writer that wraps 'f'. In this example, we're assuming
+	// that samples will be in the 16-bit PCM format, that our sample rate is
+	// 44100 samples/second, and that each sample consists of 2 blocks.
 	w, _ := wave.NewWriter(
 		f, wave.SampleTypeInt16, uint32(44100), wave.WithChannelCount(2),
 	)
@@ -49,9 +53,11 @@ func main() {
 		_ = w.Flush()
 	}()
 	
-	// Write your audio samples to the writer
+	// Write your audio samples to the writer. Audio data is assumed to be
+	// organized into 'samples', where each sample consists of multiple blocks. 
+	// The number of blocks in a sample corresponds to the number of channels.
 	var samples []int16 = ...
-	_ = w.WriteInterleavedInt16(samples)
+	_ = w.WriteInt16(samples)
 }
 ```
 
@@ -65,39 +71,51 @@ example above, the channel count has been set, overriding the default value
 of 1.
 
 ### Working with multiple channels
-The API assumes that all samples are *interleaved* (as opposed to *strided*),
-meaning that samples are organized as follows:
+In this library, each audio **sample** consists of 1 or more **blocks**, with 
+one block per audio channel. A block is represented as a single number with a
+Go type of `uint8`, `int16`, `int32`, `float32`, or `float64`. 
+
+The API assumes that all *samples* are contiguous, meaning that audio 
+data is organized by *block*, rather than by *channel*.
+
+The table below visually demonstrates how blocks are laid out in a slice:
 
 ```text
-+--------+----------------------------+
-|  Index | Value                      |
-+--------+----------------------------+
-|      0 |       Channel 0 - Sample 0 | 
-|      1 |       Channel 1 - Sample 0 | 
-|      2 |       Channel 2 - Sample 0 | 
-|      ...                            |
-|  N - 1 | Channel (N - 1) - Sample 0 |
-+--------+----------------------------+
-|      N |       Channel 0 - Sample 1 | 
-|  N + 1 |       Channel 1 - Sample 1 | 
-|  N + 2 |       Channel 2 - Sample 1 | 
-|      ...                            |
-| 2N - 1 | Channel (N - 1) - Sample 1 |
-+--------+----------------------------+
-|      ...                            |
++--------+--------+----------------------------+
+| Sample |  Index |                      Value |
++--------+--------+----------------------------+
+|        |      0 |        Channel 0 - Block 0 | 
+|        |      1 |        Channel 1 - Block 0 | 
+|   0    |      2 |        Channel 2 - Block 0 | 
+|                     ...                      |
+|        |  N - 1 |  Channel (N - 1) - Block 0 |
++--------+--------+----------------------------+
+|        |      N |        Channel 0 - Block 1 | 
+|        |  N + 1 |        Channel 1 - Block 1 | 
+|   1    |  N + 2 |        Channel 2 - Block 1 | 
+|                     ...                      |
+|        | 2N - 1 |  Channel (N - 1) - Block 1 |
++--------+--------+----------------------------+
+|                     ...                      |
 ```
 
-**NOTE**: The `core` package includes some generic utilities for 
-interleaving/deinterleaving arbitrary slices (`InterleaveSlices` and
-`DeinterleaveSlices`), which can simplify the process of preparing interleaved
-data for use with the API.
+Applications that generate multi-channel audio will sometimes choose to keep
+other conventions (e.g. organizing data first by channel and then by block, or 
+using a 2-dimensional array to store blocks). It is the responsibility of the 
+caller to ensure that their audio data is in the format expected by this 
+library.
+
+**NOTE**: The `core` package includes some generic utilities for interleaving / 
+deinterleaving arbitrary slices (`InterleaveSlices` and `DeinterleaveSlices`).
+These may prove useful if your application uses the "2D array" approach to 
+block organization.
 
 ### Streaming
 The `wave.Writer` API was designed to easily support efficient streaming of 
-data. Each call to `WriteInterleavedXXX` **appends** data to the base 
-`io.WriteSeeker` that was provided when the writer was created, meaning that
-those APIs can be called whenever a new block of samples is available. See the
-`stream-writer` example in the `examples` folder for more details.
+data. Each call to `WriteXXX` **appends** data to the base `io.WriteSeeker` 
+that was provided when the writer was created, meaning that those APIs can be 
+called whenever a new buffer of samples is available. See the `stream-writer` 
+example in the `examples` folder for more details.
 
 ### Quantization
 The `core` package includes quantizers and dequantizers that allow for 

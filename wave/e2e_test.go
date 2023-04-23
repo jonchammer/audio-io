@@ -67,7 +67,7 @@ func TestE2E_Uint8_Normal(t *testing.T) {
 	require.NoError(t, err)
 
 	// Write the file
-	err = w.WriteInterleavedUint8([]uint8{0, 1, 127, 128, 254, 255})
+	err = w.WriteUint8([]uint8{0, 1, 127, 128, 254, 255})
 	require.NoError(t, err)
 	err = w.Flush()
 	require.NoError(t, err)
@@ -106,7 +106,7 @@ func TestE2E_Uint8_Padding(t *testing.T) {
 	require.NoError(t, err)
 
 	// Write the file
-	err = w.WriteInterleavedUint8([]uint8{0, 1, 2})
+	err = w.WriteUint8([]uint8{0, 1, 2})
 	require.NoError(t, err)
 	err = w.Flush()
 	require.NoError(t, err)
@@ -144,7 +144,7 @@ func TestE2E_Uint8_Extensible(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedUint8(
+	err = w.WriteUint8(
 		[]uint8{0, 1, 2, 3, 127, 128, 129, 130, 252, 253, 254, 255},
 	)
 	require.NoError(t, err)
@@ -198,7 +198,7 @@ func TestE2E_Int16_Normal(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedInt16([]int16{-32768, -32767, 0, 1, 32766, 32767})
+	err = w.WriteInt16([]int16{-32768, -32767, 0, 1, 32766, 32767})
 	require.NoError(t, err)
 	err = w.Flush()
 	require.NoError(t, err)
@@ -236,7 +236,7 @@ func TestE2E_Int16_Extensible(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedInt16([]int16{
+	err = w.WriteInt16([]int16{
 		-32768, -32767, -32766, -32765, 0, 1, 2, 3, 32764, 32765, 32766, 32767,
 	})
 	require.NoError(t, err)
@@ -298,7 +298,7 @@ func TestE2E_Int24_Normal(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedInt24([]int32{-8388608, -8388607, 0, 1, 8388606, 8388607})
+	err = w.WriteInt24([]int32{-8388608, -8388607, 0, 1, 8388606, 8388607})
 	require.NoError(t, err)
 	err = w.Flush()
 	require.NoError(t, err)
@@ -355,7 +355,7 @@ func TestE2E_Int24_Padding(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedInt24([]int32{-8388608})
+	err = w.WriteInt24([]int32{-8388608})
 	require.NoError(t, err)
 	err = w.Flush()
 	require.NoError(t, err)
@@ -412,7 +412,7 @@ func TestE2E_Int32_Normal(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedInt32([]int32{
+	err = w.WriteInt32([]int32{
 		-2147483648, -2147483647, 0, 1, 2147483646, 2147483647,
 	})
 	require.NoError(t, err)
@@ -473,7 +473,7 @@ func TestE2E_Float32_Normal(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedFloat32([]float32{
+	err = w.WriteFloat32([]float32{
 		-1.0, -0.99, 0, 0.1, 0.99, 1.0,
 	})
 	require.NoError(t, err)
@@ -518,7 +518,7 @@ func TestE2E_Float32_Extensible(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedFloat32([]float32{
+	err = w.WriteFloat32([]float32{
 		-1.0, -0.99, -0.98, -0.97, 0.0, 0.1, 0.2, 0.3, 0.97, 0.98, 0.99, 1.0,
 	})
 	require.NoError(t, err)
@@ -580,7 +580,7 @@ func TestE2E_Float64_Normal(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedFloat64([]float64{
+	err = w.WriteFloat64([]float64{
 		-1.0, -0.99, 0, 0.1, 0.99, 1.0,
 	})
 	require.NoError(t, err)
@@ -625,7 +625,7 @@ func TestE2E_Float64_Extensible(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInterleavedFloat64([]float64{
+	err = w.WriteFloat64([]float64{
 		-1.0, -0.99, -0.98, -0.97, 0.0, 0.1, 0.2, 0.3, 0.97, 0.98, 0.99, 1.0,
 	})
 	require.NoError(t, err)
