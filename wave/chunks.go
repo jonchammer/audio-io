@@ -132,12 +132,14 @@ type FormatChunkData struct {
 	// ChannelCount represents the number of channels of audio in the file.
 	ChannelCount uint16
 
-	// The SampleRate is a count of the number of samples to be played per
-	// second (e.g. 44100).
-	SampleRate uint32
+	// The FrameRate is a count of the number of frames to be played per
+	// second (e.g. 44100), independent of the number of channels. Note that
+	// the term "sample rate" is perhaps a bit more common, but we try to avoid
+	// using it because of the ambiguity with multi-channel data.
+	FrameRate uint32
 
 	// ByteRate is a count of the number of bytes to be played per second. It
-	// should be equal to the SampleRate * the number of bytes per sample *
+	// should be equal to the FrameRate * the number of bytes per sample *
 	// ChannelCount.
 	ByteRate uint32
 
@@ -160,7 +162,7 @@ type FormatChunkData struct {
 	//   FormatCode == FormatCodeExtensible
 	//
 	// It is typically used to represent the 'speaker position mask'. See the
-	// wav specification for exact details.
+	// wave specification for exact details.
 	ChannelMask *uint32
 
 	// SubFormat should be defined (non-nil) if:
@@ -172,7 +174,7 @@ type FormatChunkData struct {
 
 func NewFormatChunkData(
 	channelCount uint16,
-	sampleRate uint32,
+	frameRate uint32,
 	sampleType SampleType,
 ) FormatChunkData {
 
@@ -183,7 +185,7 @@ func NewFormatChunkData(
 	// Calculate some common values needed for the format chunk
 	bitsPerSample := uint16(sampleSizeBytes * 8)
 	blockAlign := uint16(sampleSizeBytes) * channelCount
-	bytesPerSecond := sampleRate * uint32(blockAlign)
+	bytesPerSecond := frameRate * uint32(blockAlign)
 
 	// We'll use the extensible format when it applies
 	isExtensible := channelCount > 2 ||
@@ -205,7 +207,7 @@ func NewFormatChunkData(
 	return FormatChunkData{
 		FormatCode:         formatCode,
 		ChannelCount:       channelCount,
-		SampleRate:         sampleRate,
+		FrameRate:          frameRate,
 		ByteRate:           bytesPerSecond,
 		BlockAlign:         blockAlign,
 		BitsPerSample:      bitsPerSample,
@@ -251,7 +253,7 @@ func (c *FormatChunkData) Serialize() ([]byte, error) {
 
 	writeUint16(buffer, uint16(c.FormatCode))
 	writeUint16(buffer, c.ChannelCount)
-	writeUint32(buffer, c.SampleRate)
+	writeUint32(buffer, c.FrameRate)
 	writeUint32(buffer, c.ByteRate)
 	writeUint16(buffer, c.BlockAlign)
 	writeUint16(buffer, c.BitsPerSample)

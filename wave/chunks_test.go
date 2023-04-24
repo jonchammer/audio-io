@@ -74,7 +74,7 @@ func TestNewFormatChunkData_Uint8(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodePCM,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           88200,
 		BlockAlign:         2,
 		BitsPerSample:      8,
@@ -91,7 +91,7 @@ func TestNewFormatChunkData_Uint8(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       4,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           176400,
 		BlockAlign:         4,
 		BitsPerSample:      8,
@@ -108,7 +108,7 @@ func TestNewFormatChunkData_Int16(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodePCM,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           176400,
 		BlockAlign:         4,
 		BitsPerSample:      16,
@@ -125,7 +125,7 @@ func TestNewFormatChunkData_Int16(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       4,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           352800,
 		BlockAlign:         8,
 		BitsPerSample:      16,
@@ -145,7 +145,7 @@ func TestNewFormatChunkData_Int24(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           264600,
 		BlockAlign:         6,
 		BitsPerSample:      24,
@@ -165,7 +165,7 @@ func TestNewFormatChunkData_Int32(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           352800,
 		BlockAlign:         8,
 		BitsPerSample:      32,
@@ -182,7 +182,7 @@ func TestNewFormatChunkData_Float32(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeIEEEFloat,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           352800,
 		BlockAlign:         8,
 		BitsPerSample:      32,
@@ -199,7 +199,7 @@ func TestNewFormatChunkData_Float32(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       4,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           705600,
 		BlockAlign:         16,
 		BitsPerSample:      32,
@@ -216,7 +216,7 @@ func TestNewFormatChunkData_Float64(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeIEEEFloat,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           705600,
 		BlockAlign:         16,
 		BitsPerSample:      64,
@@ -233,7 +233,7 @@ func TestNewFormatChunkData_Float64(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       4,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           1411200,
 		BlockAlign:         32,
 		BitsPerSample:      64,
@@ -304,7 +304,7 @@ func TestFormatChunkData_Serialize_PCM(t *testing.T) {
 	require.Equal(t, 16, len(result))
 	require.Equal(t, uint16(data.FormatCode), binary.LittleEndian.Uint16(result[:2]))
 	require.Equal(t, data.ChannelCount, binary.LittleEndian.Uint16(result[2:4]))
-	require.Equal(t, data.SampleRate, binary.LittleEndian.Uint32(result[4:8]))
+	require.Equal(t, data.FrameRate, binary.LittleEndian.Uint32(result[4:8]))
 	require.Equal(t, data.ByteRate, binary.LittleEndian.Uint32(result[8:12]))
 	require.Equal(t, data.BlockAlign, binary.LittleEndian.Uint16(result[12:14]))
 	require.Equal(t, data.BitsPerSample, binary.LittleEndian.Uint16(result[14:16]))
@@ -320,7 +320,7 @@ func TestFormatChunkData_Serialize_IEEEFloat(t *testing.T) {
 	require.Equal(t, 18, len(result))
 	require.Equal(t, uint16(data.FormatCode), binary.LittleEndian.Uint16(result[:2]))
 	require.Equal(t, data.ChannelCount, binary.LittleEndian.Uint16(result[2:4]))
-	require.Equal(t, data.SampleRate, binary.LittleEndian.Uint32(result[4:8]))
+	require.Equal(t, data.FrameRate, binary.LittleEndian.Uint32(result[4:8]))
 	require.Equal(t, data.ByteRate, binary.LittleEndian.Uint32(result[8:12]))
 	require.Equal(t, data.BlockAlign, binary.LittleEndian.Uint16(result[12:14]))
 	require.Equal(t, data.BitsPerSample, binary.LittleEndian.Uint16(result[14:16]))
@@ -337,7 +337,7 @@ func TestFormatChunkData_Serialize_Extensible(t *testing.T) {
 	require.Equal(t, 40, len(result))
 	require.Equal(t, uint16(data.FormatCode), binary.LittleEndian.Uint16(result[:2]))
 	require.Equal(t, data.ChannelCount, binary.LittleEndian.Uint16(result[2:4]))
-	require.Equal(t, data.SampleRate, binary.LittleEndian.Uint32(result[4:8]))
+	require.Equal(t, data.FrameRate, binary.LittleEndian.Uint32(result[4:8]))
 	require.Equal(t, data.ByteRate, binary.LittleEndian.Uint32(result[8:12]))
 	require.Equal(t, data.BlockAlign, binary.LittleEndian.Uint16(result[12:14]))
 	require.Equal(t, data.BitsPerSample, binary.LittleEndian.Uint16(result[14:16]))

@@ -11,7 +11,7 @@ process of working with audio data. Key features include:
     - PCM `uint8`, `int16`, `int24`, and `int32` formats
     - IEEE float `float32` and `float64` formats
     - Arbitrary number of audio channels
-    - Arbitrary sample rates
+    - Arbitrary frame (or sample) rates
     - Memory-efficient streaming of audio data to disk (e.g. suitable for 
       real-time audio generation)
   * Quantizers/dequantizers
@@ -71,37 +71,37 @@ example above, the channel count has been set, overriding the default value
 of 1.
 
 ### Working with multiple channels
-In this library, each audio **sample** consists of 1 or more **blocks**, with 
-one block per audio channel. A block is represented as a single number with a
+In this library, each audio **frame** consists of 1 or more **samples**, with 
+one sample per audio channel. A sample is represented as a single number with a
 Go type of `uint8`, `int16`, `int32`, `float32`, or `float64`. 
 
-The API assumes that all *samples* are contiguous, meaning that audio 
-data is organized by *block*, rather than by *channel*.
+The API assumes that all *frames* are contiguous, meaning that audio data is 
+organized by *sample*, rather than by *channel*.
 
-The table below visually demonstrates how blocks are laid out in a slice:
+The table below visually demonstrates how samples are laid out in a slice:
 
 ```text
 +--------+--------+----------------------------+
-| Sample |  Index |                      Value |
+| Frame |  Index |                       Value |
 +--------+--------+----------------------------+
-|        |      0 |        Channel 0 - Block 0 | 
-|        |      1 |        Channel 1 - Block 0 | 
-|   0    |      2 |        Channel 2 - Block 0 | 
+|        |      0 |       Channel 0 - Sample 0 | 
+|        |      1 |       Channel 1 - Sample 0 | 
+|   0    |      2 |       Channel 2 - Sample 0 | 
 |                     ...                      |
-|        |  N - 1 |  Channel (N - 1) - Block 0 |
+|        |  N - 1 | Channel (N - 1) - Sample 0 |
 +--------+--------+----------------------------+
-|        |      N |        Channel 0 - Block 1 | 
-|        |  N + 1 |        Channel 1 - Block 1 | 
-|   1    |  N + 2 |        Channel 2 - Block 1 | 
+|        |      N |       Channel 0 - Sample 1 | 
+|        |  N + 1 |       Channel 1 - Sample 1 | 
+|   1    |  N + 2 |       Channel 2 - Sample 1 | 
 |                     ...                      |
-|        | 2N - 1 |  Channel (N - 1) - Block 1 |
+|        | 2N - 1 | Channel (N - 1) - Sample 1 |
 +--------+--------+----------------------------+
 |                     ...                      |
 ```
 
 Applications that generate multi-channel audio will sometimes choose to keep
-other conventions (e.g. organizing data first by channel and then by block, or 
-using a 2-dimensional array to store blocks). It is the responsibility of the 
+other conventions (e.g. organizing data first by channel and then by sample, or 
+using a 2-dimensional array to store samples). It is the responsibility of the 
 caller to ensure that their audio data is in the format expected by this 
 library.
 

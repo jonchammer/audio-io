@@ -21,7 +21,7 @@ func TestNewWriter_Normal(t *testing.T) {
 	// Verify that 'w' was initialized correctly
 	require.Equal(t, baseWriter, w.baseWriter)
 	require.Equal(t, SampleTypeUint8, w.sampleType)
-	require.Equal(t, uint32(44100), w.formatChunkData.SampleRate)
+	require.Equal(t, uint32(44100), w.formatChunkData.FrameRate)
 	require.Equal(t, uint16(1), w.formatChunkData.ChannelCount)
 	require.Nil(t, w.factChunkData)
 	require.Equal(t, uint32(0), w.dataBytes)
@@ -37,7 +37,7 @@ func TestNewWriter_WithFactChunk(t *testing.T) {
 	// Verify that 'w' was initialized correctly
 	require.Equal(t, baseWriter, w.baseWriter)
 	require.Equal(t, SampleTypeFloat32, w.sampleType)
-	require.Equal(t, uint32(44100), w.formatChunkData.SampleRate)
+	require.Equal(t, uint32(44100), w.formatChunkData.FrameRate)
 	require.Equal(t, uint16(1), w.formatChunkData.ChannelCount)
 	require.NotNil(t, w.factChunkData)
 	require.Equal(t, uint32(0), w.factChunkData.SampleFrames)

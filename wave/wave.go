@@ -11,7 +11,7 @@ package wave
 // ------------------------------------------------------------------------- //
 
 // FormatCode is an enum defined by the Wave specification that dictates how
-// audio samples are to be interpreted.
+// the audio data in a wave file is to be interpreted.
 type FormatCode uint16
 
 const (
@@ -20,12 +20,17 @@ const (
 	FormatCodeExtensible FormatCode = 0xFFFE
 )
 
+// IsValid returns true if 'f' represents a valid FormatCode
+func (f FormatCode) IsValid() bool {
+	return f == FormatCodePCM || f == FormatCodeIEEEFloat || f == FormatCodeExtensible
+}
+
 // ------------------------------------------------------------------------- //
 // SampleType
 // ------------------------------------------------------------------------- //
 
 // SampleType represents the type of audio data that can be accepted by a
-// particular Writer.
+// particular Writer or the type of data that can be extracted from a Reader.
 type SampleType int
 
 const (
