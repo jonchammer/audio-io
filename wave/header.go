@@ -57,6 +57,18 @@ func (h *Header) Validate() error {
 		)
 	}
 
+	// Sample frames
+	if h.FactData != nil {
+		expectedSampleFrames := h.FrameCount()
+		if h.FactData.SampleFrames != expectedSampleFrames {
+			return fmt.Errorf(
+				"sample frames: '%d' did not match expected result: '%d'",
+				h.FactData.SampleFrames,
+				expectedSampleFrames,
+			)
+		}
+	}
+
 	return nil
 }
 
