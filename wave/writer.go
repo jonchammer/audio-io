@@ -361,10 +361,7 @@ func (w *Writer) writePreamble() error {
 
 	// The preamble is represented by a hierarchy of chunks. The root chunk
 	// describes (recursively) the entire file structure.
-	preambleBytes := w.getRootChunk().Serialize()
-
-	// Write the preamble to the writer
-	_, err = w.baseWriter.Write(preambleBytes)
+	_, err = w.getRootChunk().WriteTo(w.baseWriter)
 	if err != nil {
 		return err
 	}

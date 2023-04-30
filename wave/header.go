@@ -1,6 +1,7 @@
 package wave
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
@@ -8,6 +9,9 @@ import (
 // A Header is a preprocessed view of the beginning of a wave file, typically
 // used when reading wave files (as opposed to writing them).
 type Header struct {
+
+	// The number of bytes in the wave file, as recorded in the file's metadata
+	ReportedFileSizeBytes uint32
 
 	// Data read from the 'fmt' chunk in the wave file
 	FormatData FormatChunkData
@@ -22,6 +26,57 @@ type Header struct {
 
 	// Contains any Chunks that were not explicitly handled by this library.
 	AdditionalChunks []Chunk
+}
+
+// parseHeaderFromRIFFChunk transforms the raw RIFF chunk data into a Header.
+func parseHeaderFromRIFFChunk(
+	totalFileSize uint32,
+	riffChunkData *RIFFChunkData,
+) (*Header, error) {
+
+	var formatChunk *FormatChunkData
+	var factChunk *FactChunkData
+	var dataBytes uint32
+	var additionalChunks []Chunk
+	var err error
+
+	for _, chunk := range riffChunkData.SubChunks {
+		switch chunk.ID {
+		case FormatChunkID:
+			{
+				formatChunk, err = DeserializeFormatChunk(chunk.Body)
+				if err != nil {
+					return nil, err
+				}
+			}
+		case FactChunkID:
+			{
+				factChunk, err = DeserializeFactChunk(chunk.Body)
+				if err != nil {
+					return nil, err
+				}
+			}
+		case DataChunkID:
+			{
+				dataBytes = chunk.Size
+			}
+		default:
+			additionalChunks = append(additionalChunks, chunk)
+		}
+	}
+
+	// Sanity checks
+	if formatChunk == nil {
+		return nil, errors.New("no 'fmt' chunk present in file")
+	}
+
+	return &Header{
+		ReportedFileSizeBytes: totalFileSize,
+		FormatData:            *formatChunk,
+		FactData:              factChunk,
+		DataBytes:             dataBytes,
+		AdditionalChunks:      additionalChunks,
+	}, nil
 }
 
 // Validate performs a series of cross-calculations on this Header to ensure

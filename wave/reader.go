@@ -34,13 +34,24 @@ func NewReader(
 
 func (r *Reader) Header() (*Header, error) {
 
-	// When the header has already been read, we can return it directly
-	if r.header != nil {
-		return r.header, nil
-	}
+	// If we haven't yet read the header, do that first. Results will be cached
+	// after the first invocation.
+	if r.header == nil {
 
-	// Otherwise, we'll have to read it from the base reader
-	// TODO: Fill in
+		// Read the raw RIFF chunk data from the base reader.
+		fileSize, riffData, err := ReadRIFFChunk(r.baseReader)
+		if err != nil {
+			return nil, err
+		}
+
+		// Parse the RIFF chunk as a Header.
+		header, err := parseHeaderFromRIFFChunk(fileSize, riffData)
+		if err != nil {
+			return nil, err
+		}
+		
+		r.header = header
+	}
 
 	return r.header, nil
 }
