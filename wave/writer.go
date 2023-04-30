@@ -391,7 +391,7 @@ func (w *Writer) getRootChunk() Chunk {
 	subChunks = append(subChunks, NewDataChunkHeader(w.dataBytes))
 
 	return NewRIFFChunk(&RIFFChunkData{
-		subChunks: subChunks,
+		SubChunks: subChunks,
 	})
 }
 

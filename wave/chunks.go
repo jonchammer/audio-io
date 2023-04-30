@@ -58,7 +58,13 @@ func NewRIFFChunk(data *RIFFChunkData) Chunk {
 }
 
 type RIFFChunkData struct {
-	subChunks []Chunk
+
+	// The RIFF chunk includes the WAVE ID before the sub chunks begin, but as
+	// this field is always set to the constant "WAVE", we don't include it in
+	// the actual RIFFChunkData structure.
+	// WaveID [4]byte
+
+	SubChunks []Chunk
 }
 
 // Serialize returns 1) the serialized representation of the RIFF Chunk and 2)
@@ -86,7 +92,7 @@ func (d RIFFChunkData) Serialize() ([]byte, uint32) {
 	riffBody = append(riffBody, WaveID...)
 
 	totalSizeBytes := uint32(len(riffBody))
-	for _, chunk := range d.subChunks {
+	for _, chunk := range d.SubChunks {
 		riffBody = append(riffBody, chunk.Serialize()...)
 
 		// The total size includes 8 bytes for the chunk's header, the actual
@@ -284,9 +290,63 @@ func (c *FormatChunkData) Serialize() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+// DeserializeFormatChunk reads a FormatChunkData structure from the provided
+// []byte input. Errors will be thrown if the data is obviously structurally
+// corrupted, but no checking is performed on the validity of the fields
+// themselves.
 func DeserializeFormatChunk(data []byte) (*FormatChunkData, error) {
-	// TODO: Fill in
-	return nil, nil
+
+	const (
+		minFactPayloadSize              = 16
+		minFactPayloadWithExtensionSize = 18
+		minExtensibleSize               = 22
+	)
+	if len(data) < minFactPayloadSize {
+		return nil, errors.New("detected corrupted 'fmt' payload")
+	}
+
+	formatCode := FormatCode(readUint16(data[:2]))
+	channelCount := readUint16(data[2:4])
+	frameRate := readUint32(data[4:8])
+	byteRate := readUint32(data[8:12])
+	blockAlign := readUint16(data[12:14])
+	bitsPerSample := readUint16(data[14:16])
+
+	var validBitsPerSample *uint16
+	var channelMask *uint32
+	var subFormat *FormatCode
+
+	// Process any extensions (if present)
+	if len(data) >= minFactPayloadWithExtensionSize {
+		extensionSize := readUint16(data[16:18])
+		if extensionSize >= minExtensibleSize {
+
+			bps := readUint16(data[18:20])
+			validBitsPerSample = &bps
+
+			cm := readUint32(data[20:24])
+			channelMask = &cm
+
+			sf := FormatCode(readUint16(data[24:26]))
+			subFormat = &sf
+
+			// We'll ignore the rest of the GUID (data[26:40]) and any other
+			// extension fields.
+			// ...
+		}
+	}
+
+	return &FormatChunkData{
+		FormatCode:         formatCode,
+		ChannelCount:       channelCount,
+		FrameRate:          frameRate,
+		ByteRate:           byteRate,
+		BlockAlign:         blockAlign,
+		BitsPerSample:      bitsPerSample,
+		ValidBitsPerSample: validBitsPerSample,
+		ChannelMask:        channelMask,
+		SubFormat:          subFormat,
+	}, nil
 }
 
 // ------------------------------------------------------------------------- //
@@ -329,9 +389,17 @@ func (c FactChunkData) Serialize() []byte {
 	return uint32ToBytes(c.SampleFrames)
 }
 
+// DeserializeFactChunk reads a FactChunkData structure from the provided
+// []byte input.
 func DeserializeFactChunk(data []byte) (*FactChunkData, error) {
-	// TODO: Fill in
-	return nil, nil
+
+	if len(data) < 4 {
+		return nil, errors.New("detected corrupted 'fact' payload")
+	}
+
+	return &FactChunkData{
+		SampleFrames: readUint32(data),
+	}, nil
 }
 
 // ------------------------------------------------------------------------- //
@@ -376,4 +444,12 @@ func writeUint32(buffer *bytes.Buffer, val uint32) {
 	scratch := make([]byte, 4)
 	binary.LittleEndian.PutUint32(scratch, val)
 	_, _ = buffer.Write(scratch)
+}
+
+func readUint16(buffer []byte) uint16 {
+	return binary.LittleEndian.Uint16(buffer)
+}
+
+func readUint32(buffer []byte) uint32 {
+	return binary.LittleEndian.Uint32(buffer)
 }

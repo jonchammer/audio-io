@@ -30,7 +30,7 @@ func TestChunk_Serialize(t *testing.T) {
 
 func TestRIFFChunkData_Serialize_Normal(t *testing.T) {
 	data := RIFFChunkData{
-		subChunks: []Chunk{
+		SubChunks: []Chunk{
 			{
 				ID:   [4]byte{'a', 'b', 'c', 'd'},
 				Size: 4,
