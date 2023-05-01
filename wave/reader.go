@@ -49,7 +49,7 @@ func (r *Reader) Header() (*Header, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		r.header = header
 	}
 
@@ -225,7 +225,7 @@ func (r *Reader) readChunk(
 	if r.buffer == nil {
 		r.buffer = make([]byte, maxBytes)
 	} else if len(r.buffer) < maxBytes {
-		r.buffer = append(make([]byte, maxBytes), r.buffer...)
+		r.buffer = append(make([]byte, 0, maxBytes), r.buffer...)
 	}
 
 	// Read as many as 'maxBytes' elements into the internal buffer. Note that

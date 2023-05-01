@@ -197,6 +197,7 @@ var (
 	FormatChunkID                = [4]byte{'f', 'm', 't', ' '}
 	ErrFmtChunkMissingSubFormat  = errors.New("sub format is expected, but not present")
 	ErrFmtChunkInvalidExtensible = errors.New("extensible format requires that ValidBitsPerSample, ChannelMask, and SubFormat be set")
+	ErrFmtChunkCorruptedPayload  = errors.New("detected corrupted 'fmt' payload")
 )
 
 // NewFormatChunk returns a 'fmt' Chunk containing the given FormatChunkData.
@@ -387,7 +388,7 @@ func DeserializeFormatChunk(data []byte) (*FormatChunkData, error) {
 		minExtensibleSize               = 22
 	)
 	if len(data) < minFactPayloadSize {
-		return nil, errors.New("detected corrupted 'fmt' payload")
+		return nil, ErrFmtChunkCorruptedPayload
 	}
 
 	formatCode := FormatCode(readUint16(data[:2]))
@@ -440,6 +441,8 @@ func DeserializeFormatChunk(data []byte) (*FormatChunkData, error) {
 
 var (
 	FactChunkID = [4]byte{'f', 'a', 'c', 't'}
+
+	ErrFactChunkCorruptedPayload = errors.New("detected corrupted 'fact' payload")
 )
 
 // NewFactChunk returns a 'fact' Chunk containing the given FactChunkData.
@@ -479,7 +482,7 @@ func (c FactChunkData) Serialize() []byte {
 func DeserializeFactChunk(data []byte) (*FactChunkData, error) {
 
 	if len(data) < 4 {
-		return nil, errors.New("detected corrupted 'fact' payload")
+		return nil, ErrFactChunkCorruptedPayload
 	}
 
 	return &FactChunkData{
@@ -516,6 +519,12 @@ func NewDataChunkHeader(dataSize uint32) Chunk {
 func uint32ToBytes(val uint32) []byte {
 	scratch := make([]byte, 4)
 	binary.LittleEndian.PutUint32(scratch, val)
+	return scratch
+}
+
+func uint16ToBytes(val uint16) []byte {
+	scratch := make([]byte, 2)
+	binary.LittleEndian.PutUint16(scratch, val)
 	return scratch
 }
 
