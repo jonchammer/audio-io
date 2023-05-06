@@ -49,6 +49,8 @@ func (c Chunk) WriteTo(w io.Writer) (int64, error) {
 var (
 	RIFFChunkID = [4]byte{'R', 'I', 'F', 'F'}
 	WaveID      = [4]byte{'W', 'A', 'V', 'E'}
+
+	ErrRIFFChunkCorruptedHeader = errors.New("RIFF header is corrupted")
 )
 
 // NewRIFFChunk returns a 'RIFF' Chunk containing the given RIFFChunkData. The
@@ -112,20 +114,22 @@ func (d RIFFChunkData) Serialize() ([]byte, uint32) {
 
 // ReadRIFFChunk reads a RIFF chunk from the given reader, returning the total
 // file size (including the 8 bytes of header information) and a RIFFChunkData
-// structure upon success. ReadRIFFChunk reads only the metadata for the file -
-// no audio data will be read. Because of this, the 'data' chunk MUST be placed
-// last in the file.
-func ReadRIFFChunk(r io.Reader) (uint32, *RIFFChunkData, error) {
+// structure upon success.
+//
+// ReadRIFFChunk will scan through the entire reader, searching for any chunks
+// within the file. After extracting all relevant metadata, the reader will be
+// reset to the beginning of the 'data' chunk, ready for buffered reads.
+func ReadRIFFChunk(r io.ReadSeeker) (uint32, *RIFFChunkData, error) {
 
 	buffer := make([]byte, 4)
 
-	// RIFF ID ("RIFF)
+	// RIFF ID ("RIFF")
 	_, err := io.ReadFull(r, buffer)
 	if err != nil {
 		return 0, nil, err
 	}
 	if !bytes.Equal(buffer, RIFFChunkID[:]) {
-		return 0, nil, errors.New("corrupted RIFF chunk")
+		return 0, nil, ErrRIFFChunkCorruptedHeader
 	}
 
 	// File size
@@ -141,13 +145,20 @@ func ReadRIFFChunk(r io.Reader) (uint32, *RIFFChunkData, error) {
 		return 0, nil, err
 	}
 	if !bytes.Equal(buffer, WaveID[:]) {
-		return 0, nil, errors.New("corrupted RIFF chunk")
+		return 0, nil, ErrRIFFChunkCorruptedHeader
 	}
+
+	currentOffset := int64(12)
+	dataChunkOffset := int64(0)
 
 	// Read the sub chunks. For now, we assume that the data chunk will be the
 	// last entry in the file, and we'll avoid reading the actual audio data.
 	chunks := make([]Chunk, 0, 2)
 	for {
+
+		if currentOffset >= int64(fileSize) {
+			break
+		}
 
 		// Chunk ID
 		var chunkID [4]byte
@@ -155,6 +166,7 @@ func ReadRIFFChunk(r io.Reader) (uint32, *RIFFChunkData, error) {
 		if err != nil {
 			return 0, nil, err
 		}
+		currentOffset += 4
 
 		// Chunk size
 		_, err = io.ReadFull(r, buffer)
@@ -162,12 +174,22 @@ func ReadRIFFChunk(r io.Reader) (uint32, *RIFFChunkData, error) {
 			return 0, nil, err
 		}
 		chunkSize := binary.LittleEndian.Uint32(buffer)
+		currentOffset += 4
 
-		// Chunk body - We will avoid reading the body for the 'data' chunk
+		// Chunk body - For any chunk but the 'data' one, we'll read the chunk
+		// body in full. For the 'data' chunk, we'll simply skip over those
+		// bytes instead.
 		var chunkBytes []byte
 		if chunkID != DataChunkID {
 			chunkBytes = make([]byte, chunkSize)
 			_, err = io.ReadFull(r, chunkBytes)
+			if err != nil {
+				return 0, nil, err
+			}
+			currentOffset += int64(chunkSize)
+		} else {
+			dataChunkOffset = currentOffset
+			currentOffset, err = r.Seek(currentOffset+int64(chunkSize), io.SeekStart)
 			if err != nil {
 				return 0, nil, err
 			}
@@ -178,10 +200,12 @@ func ReadRIFFChunk(r io.Reader) (uint32, *RIFFChunkData, error) {
 			Size: chunkSize,
 			Body: chunkBytes,
 		})
+	}
 
-		if chunkID == DataChunkID {
-			break
-		}
+	// Reset 'r' to the beginning of the data chunk
+	_, err = r.Seek(dataChunkOffset, io.SeekStart)
+	if err != nil {
+		return 0, nil, err
 	}
 
 	return fileSize, &RIFFChunkData{

@@ -167,6 +167,20 @@ func (h *Header) FrameRate() uint32 {
 	return h.FormatData.FrameRate
 }
 
+// ByteRate returns the byte rate for the wave file associated with this header,
+// measured in bytes/second.
+func (h *Header) ByteRate() uint32 {
+	return h.FormatData.ByteRate
+}
+
+// BitRate returns the bit rate for the wave file associated with this header,
+// measured in bits/second.
+func (h *Header) BitRate() uint64 {
+
+	// NOTE: Returning uint64 to eliminate chances of overflow
+	return uint64(h.FormatData.ByteRate) * 8
+}
+
 // ChannelCount returns the number of channels of audio data present in the
 // wave file associated with this header. The channel count also determines
 // the number of blocks that must be read to return a single sample.

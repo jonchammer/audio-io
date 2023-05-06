@@ -17,19 +17,21 @@ var (
 )
 
 type Reader struct {
-	baseReader io.Reader
+	baseReader io.ReadSeeker
+	dataReader io.Reader
 	header     *Header
 	buffer     []byte
 }
 
 func NewReader(
-	baseReader io.Reader,
-) (*Reader, error) {
+	baseReader io.ReadSeeker,
+) *Reader {
 	return &Reader{
 		baseReader: baseReader,
+		dataReader: nil,
 		header:     nil,
 		buffer:     nil,
-	}, nil
+	}
 }
 
 func (r *Reader) Header() (*Header, error) {
@@ -51,6 +53,11 @@ func (r *Reader) Header() (*Header, error) {
 		}
 
 		r.header = header
+
+		// We'll set up a LimitedReader to ensure the user doesn't
+		// inadvertently try to read more bytes from the 'data' chunk than are
+		// actually present.
+		r.dataReader = io.LimitReader(r.baseReader, int64(header.DataBytes))
 	}
 
 	return r.header, nil
@@ -75,7 +82,7 @@ func (r *Reader) ReadUint8(data []uint8) (int, error) {
 
 	// For uint8 data, we can read directly into the slice provided by the
 	// caller. No buffering is required.
-	return r.baseReader.Read(data)
+	return r.dataReader.Read(data)
 }
 
 func (r *Reader) ReadInt16(data []int16) (int, error) {
@@ -207,7 +214,7 @@ func (r *Reader) ReadFloat64(data []float64) (int, error) {
 	return samplesRead, err
 }
 
-// readChunk pulls up to 'maxBytes' from the base reader into this reader's
+// readChunk pulls up to 'maxBytes' from the data reader into this reader's
 // internal buffer, returning the number of bytes actually read and an error.
 //
 // readChunk has the same semantics as io.ReadFull:
@@ -231,5 +238,5 @@ func (r *Reader) readChunk(
 	// Read as many as 'maxBytes' elements into the internal buffer. Note that
 	// the buffer may actually have space for more elements if 'readChunk'
 	// was called earlier with a larger value for 'maxBytes'.
-	return io.ReadFull(r.baseReader, r.buffer[:maxBytes])
+	return io.ReadFull(r.dataReader, r.buffer[:maxBytes])
 }

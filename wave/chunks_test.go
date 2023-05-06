@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/stretchr/testify/require"
+	"io"
 	"testing"
 )
 
@@ -62,6 +63,142 @@ func TestRIFFChunkData_Serialize_Empty(t *testing.T) {
 	result, totalSizeBytes := RIFFChunkData{}.Serialize()
 	require.Equal(t, []byte("WAVE"), result)
 	require.Equal(t, uint32(4), totalSizeBytes)
+}
+
+func TestReadRIFFChunk_Normal(t *testing.T) {
+
+	var payload bytes.Buffer
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write(WaveID[:])          // "WAVE"
+	payload.Write([]byte{             // Add a few example chunks
+		'a', 'b', 'c', 'd',
+		0x04, 0x00, 0x00, 0x00,
+		0x01, 0x02, 0x03, 0x04,
+		'e', 'f', 'g', 'h',
+		0x04, 0x00, 0x00, 0x00,
+		0x05, 0x06, 0x07, 0x08,
+	})
+	payload.Write(DataChunkID[:])    // "data"
+	payload.Write(uint32ToBytes(42)) // Data size in bytes
+
+	fileSize, riffChunkData, err := ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.NoError(t, err)
+	require.Equal(t, uint32(100+8), fileSize) // +8 for the RIFF header
+	require.NotNil(t, riffChunkData)
+	require.Equal(t, 3, len(riffChunkData.SubChunks))
+
+	chunk := riffChunkData.SubChunks[0]
+	require.Equal(t, [4]byte{'a', 'b', 'c', 'd'}, chunk.ID)
+	require.Equal(t, uint32(4), chunk.Size)
+	require.Equal(t, []byte{0x01, 0x02, 0x03, 0x04}, chunk.Body)
+
+	chunk = riffChunkData.SubChunks[1]
+	require.Equal(t, [4]byte{'e', 'f', 'g', 'h'}, chunk.ID)
+	require.Equal(t, uint32(4), chunk.Size)
+	require.Equal(t, []byte{0x05, 0x06, 0x07, 0x08}, chunk.Body)
+
+	chunk = riffChunkData.SubChunks[2]
+	require.Equal(t, [4]byte{'d', 'a', 't', 'a'}, chunk.ID)
+	require.Equal(t, uint32(42), chunk.Size)
+	require.Empty(t, chunk.Body)
+}
+
+func TestReadRIFFChunk_InvalidHeader(t *testing.T) {
+
+	var payload bytes.Buffer
+
+	// Incomplete ID
+	payload.Write([]byte{'R', 'I', 'F'})
+	_, _, err := ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+
+	// Invalid RIFF ID
+	payload.Write([]byte{'B', 'A', 'D', ' '})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, ErrRIFFChunkCorruptedHeader)
+	payload.Reset()
+
+	// Incomplete file size
+	payload.Write(RIFFChunkID[:]) // "RIFF"
+	payload.Write([]byte{0x04, 0x00, 0x00})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+
+	// Incomplete WAVE ID
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write([]byte{'W', 'A', 'V'})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+
+	// Invalid Wave ID
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write([]byte{'B', 'A', 'D', ' '})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, ErrRIFFChunkCorruptedHeader)
+	payload.Reset()
+}
+
+func TestReadRIFFChunk_CorruptedChunk(t *testing.T) {
+
+	var payload bytes.Buffer
+
+	// Incomplete chunk ID
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write(WaveID[:])          // "WAVE"
+	payload.Write([]byte{'a', 'b', 'c'})
+	_, _, err := ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+
+	// Incomplete chunk size
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write(WaveID[:])          // "WAVE"
+	payload.Write([]byte{
+		'a', 'b', 'c', 'd',
+		0x04, 0x00, 0x00,
+	})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+
+	// Incomplete chunk body
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write(WaveID[:])          // "WAVE"
+	payload.Write([]byte{
+		'a', 'b', 'c', 'd',
+		0x04, 0x00, 0x00, 0x00,
+		0x01, 0x02, 0x03,
+	})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+}
+
+func TestReadRIFFChunk_MissingDataChunk(t *testing.T) {
+	var payload bytes.Buffer
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write(WaveID[:])          // "WAVE"
+	payload.Write([]byte{             // Add a few example chunks
+		'a', 'b', 'c', 'd',
+		0x04, 0x00, 0x00, 0x00,
+		0x01, 0x02, 0x03, 0x04,
+		'e', 'f', 'g', 'h',
+		0x04, 0x00, 0x00, 0x00,
+		0x05, 0x06, 0x07, 0x08,
+	})
+
+	_, _, err := ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.EOF)
 }
 
 // ------------------------------------------------------------------------- //

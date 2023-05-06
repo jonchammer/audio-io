@@ -2,6 +2,10 @@
 // Wave (.wav) files.
 package wave
 
+import (
+	"fmt"
+)
+
 // References
 //   - https://wavefilegem.com/how_wave_files_work.html
 //   - http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html
@@ -23,6 +27,19 @@ const (
 // IsValid returns true if 'f' represents a valid FormatCode
 func (f FormatCode) IsValid() bool {
 	return f == FormatCodePCM || f == FormatCodeIEEEFloat || f == FormatCodeExtensible
+}
+
+func (f FormatCode) String() string {
+	switch f {
+	case FormatCodePCM:
+		return "PCM"
+	case FormatCodeIEEEFloat:
+		return "IEEE Float"
+	case FormatCodeExtensible:
+		return "Extensible"
+	default:
+		return fmt.Sprintf("FormatCode(%d)", f)
+	}
 }
 
 // ------------------------------------------------------------------------- //
@@ -72,5 +89,24 @@ func (s SampleType) EffectiveFormatCode() FormatCode {
 		return FormatCodeIEEEFloat
 	default:
 		return FormatCodePCM
+	}
+}
+
+func (s SampleType) String() string {
+	switch s {
+	case SampleTypeUint8:
+		return "Uint8"
+	case SampleTypeInt16:
+		return "Int16"
+	case SampleTypeInt24:
+		return "Int24"
+	case SampleTypeInt32:
+		return "Int32"
+	case SampleTypeFloat32:
+		return "Float32"
+	case SampleTypeFloat64:
+		return "Float64"
+	default:
+		return fmt.Sprintf("SampleType(%d)", s)
 	}
 }
