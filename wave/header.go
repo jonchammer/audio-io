@@ -20,6 +20,10 @@ type Header struct {
 	// wave files will have 'fact' chunks.
 	FactData *FactChunkData
 
+	// Data read from the 'cue ' chunk in the wave file (if present). Not all
+	// wave files will have 'cue ' chunks.
+	CueData *CueChunkData
+
 	// Represents the total number of bytes of audio data that can be read from
 	// this wave file.
 	DataBytes uint32
@@ -36,6 +40,7 @@ func parseHeaderFromRIFFChunk(
 
 	var formatChunk *FormatChunkData
 	var factChunk *FactChunkData
+	var cueChunk *CueChunkData
 	var dataBytes uint32
 	var additionalChunks []Chunk
 	var err error
@@ -52,6 +57,13 @@ func parseHeaderFromRIFFChunk(
 		case FactChunkID:
 			{
 				factChunk, err = DeserializeFactChunk(chunk.Body)
+				if err != nil {
+					return nil, err
+				}
+			}
+		case CueChunkID:
+			{
+				cueChunk, err = DeserializeCueChunkData(chunk.Body)
 				if err != nil {
 					return nil, err
 				}
@@ -74,6 +86,7 @@ func parseHeaderFromRIFFChunk(
 		ReportedFileSizeBytes: totalFileSize,
 		FormatData:            *formatChunk,
 		FactData:              factChunk,
+		CueData:               cueChunk,
 		DataBytes:             dataBytes,
 		AdditionalChunks:      additionalChunks,
 	}, nil

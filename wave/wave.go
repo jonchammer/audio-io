@@ -9,6 +9,7 @@ import (
 // References
 //   - https://wavefilegem.com/how_wave_files_work.html
 //   - http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html
+//   - https://www.recordingblogs.com/wiki/wave-file-format
 
 // ------------------------------------------------------------------------- //
 // FormatCode

@@ -537,6 +537,63 @@ func NewDataChunkHeader(dataSize uint32) Chunk {
 }
 
 // ------------------------------------------------------------------------- //
+// Cue chunk
+// ------------------------------------------------------------------------- //
+
+var (
+	CueChunkID = [4]byte{'c', 'u', 'e', ' '}
+
+	ErrCueChunkCorruptedPayload = errors.New("detected corrupted 'cue ' payload")
+)
+
+type CuePoint struct {
+	ID           uint32
+	Position     uint32
+	FCCChunk     [4]byte
+	ChunkStart   uint32
+	BlockStart   uint32
+	SampleOffset uint32
+}
+
+type CueChunkData struct {
+	CuePoints []CuePoint
+}
+
+// DeserializeCueChunkData reads a CueChunkData structure from the provided
+// []byte input. Errors will be thrown if the data is obviously structurally
+// corrupted, but no checking is performed on the validity of the fields
+// themselves.
+func DeserializeCueChunkData(data []byte) (*CueChunkData, error) {
+
+	const (
+		minCuePayloadSize = 4
+		cuePointSize      = 24
+	)
+
+	if len(data) < minCuePayloadSize {
+		return nil, ErrCueChunkCorruptedPayload
+	}
+
+	numCuePoints := int(readUint32(data[:4]))
+	if len(data) < numCuePoints*cuePointSize {
+		return nil, ErrCueChunkCorruptedPayload
+	}
+
+	cuePoints := make([]CuePoint, numCuePoints)
+	for i := 0; i < numCuePoints; i++ {
+		cuePoints[i].ID = readUint32(data[4:8])
+		cuePoints[i].Position = readUint32(data[8:12])
+		copy(cuePoints[i].FCCChunk[:], data[12:16])
+		cuePoints[i].ChunkStart = readUint32(data[16:20])
+		cuePoints[i].BlockStart = readUint32(data[20:24])
+		cuePoints[i].SampleOffset = readUint32(data[24:28])
+	}
+	return &CueChunkData{
+		CuePoints: cuePoints,
+	}, nil
+}
+
+// ------------------------------------------------------------------------- //
 // Helpers
 // ------------------------------------------------------------------------- //
 

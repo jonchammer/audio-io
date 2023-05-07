@@ -12,7 +12,7 @@ import (
 func main() {
 
 	// Open the provided file for reading
-	file, err := os.Open("voice.wav")
+	file, err := os.Open("example.wav")
 	if err != nil {
 		failF(err)
 	}
@@ -59,7 +59,7 @@ func printWaveMetadata(r *wave.Reader) error {
 	// to one of the wave.SampleTypeXXX constants.
 	sampleType, _ := header.SampleType()
 
-	// Print some relevant metadata for the file.
+	// Print some common metadata for the file.
 	fmt.Printf("Successfully read wave header\n")
 	fmt.Printf("File Size (bytes):      %d\n", header.ReportedFileSizeBytes)
 	fmt.Printf("Sample Type:            %s\n", sampleType)
@@ -81,6 +81,17 @@ func printWaveMetadata(r *wave.Reader) error {
 	}
 	fmt.Printf("Validation:             %s\n", msg)
 	fmt.Println()
+
+	// Print specialized information if we have it
+	if header.CueData != nil {
+		fmt.Println("Cues:")
+		for i, c := range header.CueData.CuePoints {
+			fmt.Printf("%d - Cue ID: %d\n", i, c.ID)
+			fmt.Printf("  - Chunk:  '%s'\n", string(c.FCCChunk[:]))
+			fmt.Printf("  - Offset: %d\n", c.SampleOffset)
+		}
+		fmt.Println()
+	}
 
 	// This library knows how to interpret several common WAVE chunks, but if
 	// a particular chunk isn't recognized, the user has an option to deal with
