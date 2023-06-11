@@ -202,8 +202,8 @@ func minMax(samples []float64) (float64, float64) {
 }
 
 // drawGraph renders the provided minimum and maximum values as a simple ASCII
-// chart, like the one given below. The x axis represents individual blocks of
-// audio (proportional to time), the y axis represents the max/min amplitudes
+// chart, like the one given below. The x-axis represents individual blocks of
+// audio (proportional to time), the y-axis represents the max/min amplitudes
 // encountered in that block. The height of the graph (in rows) can be provided
 // as input to increase the vertical resolution.
 //
@@ -242,7 +242,7 @@ func drawGraph(minValues []float64, maxValues []float64, height int) {
 	// Linearly map each element of the min/max arrays to a row number and then
 	// fill in all cells between those rows to form a solid vertical bar. (This
 	// is an extremely primitive way of rendering signal amplitudes, but it
-	// will work well enough for this example.
+	// will work well enough for this example).
 	for x := 0; x < width; x++ {
 		maxRow := int((float64(height) * (1 - maxValues[x])) / 2)
 		minRow := int((float64(height) * (1 - minValues[x])) / 2)

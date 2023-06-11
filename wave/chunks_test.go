@@ -68,10 +68,10 @@ func TestRIFFChunkData_Serialize_Empty(t *testing.T) {
 func TestReadRIFFChunk_Normal(t *testing.T) {
 
 	var payload bytes.Buffer
-	payload.Write(RIFFChunkID[:])     // "RIFF"
-	payload.Write(uint32ToBytes(100)) // Example file size
-	payload.Write(WaveID[:])          // "WAVE"
-	payload.Write([]byte{             // Add a few example chunks
+	payload.Write(RIFFChunkID[:])    // "RIFF"
+	payload.Write(uint32ToBytes(78)) // Example file size
+	payload.Write(WaveID[:])         // "WAVE"
+	payload.Write([]byte{            // Add a few example chunks
 		'a', 'b', 'c', 'd',
 		0x04, 0x00, 0x00, 0x00,
 		0x01, 0x02, 0x03, 0x04,
@@ -81,10 +81,11 @@ func TestReadRIFFChunk_Normal(t *testing.T) {
 	})
 	payload.Write(DataChunkID[:])    // "data"
 	payload.Write(uint32ToBytes(42)) // Data size in bytes
+	payload.Write(make([]byte, 42))
 
 	fileSize, riffChunkData, err := ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
 	require.NoError(t, err)
-	require.Equal(t, uint32(100+8), fileSize) // +8 for the RIFF header
+	require.Equal(t, uint32(78+8), fileSize) // +8 for the RIFF header
 	require.NotNil(t, riffChunkData)
 	require.Equal(t, 3, len(riffChunkData.SubChunks))
 
