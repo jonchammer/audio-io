@@ -174,6 +174,7 @@ func ReadRIFFChunk(r io.ReadSeeker) (uint32, *RIFFChunkData, error) {
 			return 0, nil, err
 		}
 		chunkSize := binary.LittleEndian.Uint32(buffer)
+		paddingByteCount := int64(chunkSize & 1)
 		currentOffset += 4
 
 		// Chunk body - For any chunk but the 'data' one, we'll read the chunk
@@ -187,9 +188,22 @@ func ReadRIFFChunk(r io.ReadSeeker) (uint32, *RIFFChunkData, error) {
 				return 0, nil, err
 			}
 			currentOffset += int64(chunkSize)
+
+			// If a padding byte is present, we'll need to account for it too.
+			if paddingByteCount != 0 {
+				_, err = r.Read(buffer[:1])
+				if err != nil {
+					return 0, nil, err
+				}
+				currentOffset++
+			}
+
 		} else {
 			dataChunkOffset = currentOffset
-			currentOffset, err = r.Seek(currentOffset+int64(chunkSize), io.SeekStart)
+			currentOffset, err = r.Seek(
+				currentOffset+int64(chunkSize)+paddingByteCount,
+				io.SeekStart,
+			)
 			if err != nil {
 				return 0, nil, err
 			}

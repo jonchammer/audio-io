@@ -4,14 +4,17 @@ import (
 	ioBytes "bytes"
 	"encoding/binary"
 	"github.com/stretchr/testify/require"
+	"io"
 	"testing"
+	"time"
 
 	"github.com/jonchammer/audio-io/bytes"
 )
 
 // ------------------------------------------------------------------------- //
 // End-to-end tests - These are used to ensure the writer consistently
-// generates the correct .wav files.
+// generates the correct .wav files and that the reader is capable of
+// interpreting them.
 // ------------------------------------------------------------------------- //
 
 // ------------------------------------------------------------------------- //
@@ -52,6 +55,49 @@ func TestE2E_Empty(t *testing.T) {
 	// Check data chunk
 	require.Equal(t, []byte("data"), data[36:40])
 	require.Equal(t, uint32(0), binary.LittleEndian.Uint32(data[40:44]))
+
+	r := NewReader(ioBytes.NewReader(data))
+
+	// Check header
+	header, err := r.Header()
+	require.NoError(t, err)
+
+	// Verify header fields have proper values
+	require.Equal(t, uint32(44), header.ReportedFileSizeBytes)
+	require.Nil(t, header.FactData)
+	require.Nil(t, header.CueData)
+	require.Equal(t, uint32(0), header.DataBytes)
+	require.Empty(t, header.AdditionalChunks)
+
+	// Check the format chunk
+	require.Equal(t, FormatCodePCM, header.FormatData.FormatCode)
+	require.Equal(t, uint16(2), header.FormatData.ChannelCount)
+	require.Equal(t, uint32(44100), header.FormatData.FrameRate)
+	require.Equal(t, uint32(88200), header.FormatData.ByteRate)
+	require.Equal(t, uint16(2), header.FormatData.BlockAlign)
+	require.Equal(t, uint16(8), header.FormatData.BitsPerSample)
+	require.Nil(t, header.FormatData.ValidBitsPerSample)
+	require.Nil(t, header.FormatData.ChannelMask)
+	require.Nil(t, header.FormatData.SubFormat)
+
+	// Check header helpers
+	require.NoError(t, header.Validate())
+	st, err := header.SampleType()
+	require.NoError(t, err)
+	require.Equal(t, SampleTypeUint8, st)
+	require.Equal(t, uint32(44100), header.FrameRate())
+	require.Equal(t, uint32(88200), header.ByteRate())
+	require.Equal(t, uint64(88200*8), header.BitRate())
+	require.Equal(t, uint16(2), header.ChannelCount())
+	require.Equal(t, uint32(0), header.FrameCount())
+	require.Equal(t, uint32(0), header.SampleCount())
+	require.Equal(t, time.Duration(0), header.PlayTime())
+
+	// Read the audio data. We expect to get an EOF, since there is no data to read.
+	buffer := make([]uint8, header.SampleCount())
+	n, err := r.ReadUint8(buffer)
+	require.ErrorIs(t, err, io.EOF)
+	require.Equal(t, 0, n)
 }
 
 // ------------------------------------------------------------------------- //
@@ -95,6 +141,51 @@ func TestE2E_Uint8_Normal(t *testing.T) {
 	require.Equal(t, []byte("data"), data[36:40])
 	require.Equal(t, uint32(6), binary.LittleEndian.Uint32(data[40:44]))
 	require.Equal(t, []byte{0, 1, 127, 128, 254, 255}, data[44:50])
+
+	r := NewReader(ioBytes.NewReader(data))
+
+	// Check header
+	header, err := r.Header()
+	require.NoError(t, err)
+
+	// Verify header fields have proper values
+	require.Equal(t, uint32(50), header.ReportedFileSizeBytes)
+	require.Nil(t, header.FactData)
+	require.Nil(t, header.CueData)
+	require.Equal(t, uint32(6), header.DataBytes)
+	require.Empty(t, header.AdditionalChunks)
+
+	// Check the format chunk
+	require.Equal(t, FormatCodePCM, header.FormatData.FormatCode)
+	require.Equal(t, uint16(2), header.FormatData.ChannelCount)
+	require.Equal(t, uint32(44100), header.FormatData.FrameRate)
+	require.Equal(t, uint32(88200), header.FormatData.ByteRate)
+	require.Equal(t, uint16(2), header.FormatData.BlockAlign)
+	require.Equal(t, uint16(8), header.FormatData.BitsPerSample)
+	require.Nil(t, header.FormatData.ValidBitsPerSample)
+	require.Nil(t, header.FormatData.ChannelMask)
+	require.Nil(t, header.FormatData.SubFormat)
+
+	// Check header helpers
+	require.NoError(t, header.Validate())
+	st, err := header.SampleType()
+	require.NoError(t, err)
+	require.Equal(t, SampleTypeUint8, st)
+	require.Equal(t, uint32(44100), header.FrameRate())
+	require.Equal(t, uint32(88200), header.ByteRate())
+	require.Equal(t, uint64(88200*8), header.BitRate())
+	require.Equal(t, uint16(2), header.ChannelCount())
+	require.Equal(t, uint32(3), header.FrameCount())
+	require.Equal(t, uint32(6), header.SampleCount())
+
+	seconds := 3.0 / 44100.0
+	require.Equal(t, time.Duration(seconds*1e9), header.PlayTime())
+
+	// Read the audio data.
+	buffer := make([]uint8, header.SampleCount())
+	n, err := r.ReadUint8(buffer)
+	require.NoError(t, err)
+	require.Equal(t, []byte{0, 1, 127, 128, 254, 255}, buffer[:n])
 }
 
 func TestE2E_Uint8_Padding(t *testing.T) {
@@ -135,6 +226,51 @@ func TestE2E_Uint8_Padding(t *testing.T) {
 	require.Equal(t, uint32(3), binary.LittleEndian.Uint32(data[40:44]))
 	require.Equal(t, []byte{0, 1, 2}, data[44:47])
 	require.Equal(t, byte(0x00), data[47])
+
+	r := NewReader(ioBytes.NewReader(data))
+
+	// Check header
+	header, err := r.Header()
+	require.NoError(t, err)
+
+	// Verify header fields have proper values
+	require.Equal(t, uint32(48), header.ReportedFileSizeBytes)
+	require.Nil(t, header.FactData)
+	require.Nil(t, header.CueData)
+	require.Equal(t, uint32(3), header.DataBytes)
+	require.Empty(t, header.AdditionalChunks)
+
+	// Check the format chunk
+	require.Equal(t, FormatCodePCM, header.FormatData.FormatCode)
+	require.Equal(t, uint16(1), header.FormatData.ChannelCount)
+	require.Equal(t, uint32(44100), header.FormatData.FrameRate)
+	require.Equal(t, uint32(44100), header.FormatData.ByteRate)
+	require.Equal(t, uint16(1), header.FormatData.BlockAlign)
+	require.Equal(t, uint16(8), header.FormatData.BitsPerSample)
+	require.Nil(t, header.FormatData.ValidBitsPerSample)
+	require.Nil(t, header.FormatData.ChannelMask)
+	require.Nil(t, header.FormatData.SubFormat)
+
+	// Check header helpers
+	require.NoError(t, header.Validate())
+	st, err := header.SampleType()
+	require.NoError(t, err)
+	require.Equal(t, SampleTypeUint8, st)
+	require.Equal(t, uint32(44100), header.FrameRate())
+	require.Equal(t, uint32(44100), header.ByteRate())
+	require.Equal(t, uint64(44100*8), header.BitRate())
+	require.Equal(t, uint16(1), header.ChannelCount())
+	require.Equal(t, uint32(3), header.FrameCount())
+	require.Equal(t, uint32(3), header.SampleCount())
+
+	seconds := 3.0 / 44100.0
+	require.Equal(t, time.Duration(seconds*1e9), header.PlayTime())
+
+	// Read the audio data.
+	buffer := make([]uint8, header.SampleCount())
+	n, err := r.ReadUint8(buffer)
+	require.NoError(t, err)
+	require.Equal(t, []byte{0, 1, 2}, buffer[:n])
 }
 
 func TestE2E_Uint8_Extensible(t *testing.T) {
@@ -185,6 +321,61 @@ func TestE2E_Uint8_Extensible(t *testing.T) {
 	require.Equal(t, []byte("data"), data[72:76])
 	require.Equal(t, uint32(12), binary.LittleEndian.Uint32(data[76:80]))
 	require.Equal(t, []uint8{0, 1, 2, 3, 127, 128, 129, 130, 252, 253, 254, 255}, data[80:92])
+
+	r := NewReader(ioBytes.NewReader(data))
+
+	// Check header
+	header, err := r.Header()
+	require.NoError(t, err)
+
+	// Verify header fields have proper values
+	require.Equal(t, uint32(92), header.ReportedFileSizeBytes)
+	require.NotNil(t, header.FactData)
+	require.Nil(t, header.CueData)
+	require.Equal(t, uint32(12), header.DataBytes)
+	require.Empty(t, header.AdditionalChunks)
+
+	// Check the format chunk
+	require.Equal(t, FormatCodeExtensible, header.FormatData.FormatCode)
+	require.Equal(t, uint16(4), header.FormatData.ChannelCount)
+	require.Equal(t, uint32(44100), header.FormatData.FrameRate)
+	require.Equal(t, uint32(176400), header.FormatData.ByteRate)
+	require.Equal(t, uint16(4), header.FormatData.BlockAlign)
+	require.Equal(t, uint16(8), header.FormatData.BitsPerSample)
+	require.NotNil(t, header.FormatData.ValidBitsPerSample)
+	require.Equal(t, uint16(8), *header.FormatData.ValidBitsPerSample)
+	require.NotNil(t, header.FormatData.ChannelMask)
+	require.Equal(t, uint32(0), *header.FormatData.ChannelMask)
+	require.NotNil(t, header.FormatData.SubFormat)
+	require.Equal(t, FormatCodePCM, *header.FormatData.SubFormat)
+
+	// Check the fact chunk
+	require.Equal(t, uint32(3), header.FactData.SampleFrames)
+
+	// Check header helpers
+	require.NoError(t, header.Validate())
+	st, err := header.SampleType()
+	require.NoError(t, err)
+	require.Equal(t, SampleTypeUint8, st)
+	require.Equal(t, uint32(44100), header.FrameRate())
+	require.Equal(t, uint32(176400), header.ByteRate())
+	require.Equal(t, uint64(176400*8), header.BitRate())
+	require.Equal(t, uint16(4), header.ChannelCount())
+	require.Equal(t, uint32(3), header.FrameCount())
+	require.Equal(t, uint32(12), header.SampleCount())
+
+	seconds := 3.0 / 44100.0
+	require.Equal(t, time.Duration(seconds*1e9), header.PlayTime())
+
+	// Read the audio data.
+	buffer := make([]uint8, header.SampleCount())
+	n, err := r.ReadUint8(buffer)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		[]uint8{0, 1, 2, 3, 127, 128, 129, 130, 252, 253, 254, 255},
+		buffer[:n],
+	)
 }
 
 // ------------------------------------------------------------------------- //
@@ -227,6 +418,51 @@ func TestE2E_Int16_Normal(t *testing.T) {
 	err = binary.Read(ioBytes.NewReader(data[44:56]), binary.LittleEndian, readData)
 	require.NoError(t, err)
 	require.Equal(t, []int16{-32768, -32767, 0, 1, 32766, 32767}, readData)
+
+	r := NewReader(ioBytes.NewReader(data))
+
+	// Check header
+	header, err := r.Header()
+	require.NoError(t, err)
+
+	// Verify header fields have proper values
+	require.Equal(t, uint32(56), header.ReportedFileSizeBytes)
+	require.Nil(t, header.FactData)
+	require.Nil(t, header.CueData)
+	require.Equal(t, uint32(12), header.DataBytes)
+	require.Empty(t, header.AdditionalChunks)
+
+	// Check the format chunk
+	require.Equal(t, FormatCodePCM, header.FormatData.FormatCode)
+	require.Equal(t, uint16(2), header.FormatData.ChannelCount)
+	require.Equal(t, uint32(44100), header.FormatData.FrameRate)
+	require.Equal(t, uint32(176400), header.FormatData.ByteRate)
+	require.Equal(t, uint16(4), header.FormatData.BlockAlign)
+	require.Equal(t, uint16(16), header.FormatData.BitsPerSample)
+	require.Nil(t, header.FormatData.ValidBitsPerSample)
+	require.Nil(t, header.FormatData.ChannelMask)
+	require.Nil(t, header.FormatData.SubFormat)
+
+	// Check header helpers
+	require.NoError(t, header.Validate())
+	st, err := header.SampleType()
+	require.NoError(t, err)
+	require.Equal(t, SampleTypeInt16, st)
+	require.Equal(t, uint32(44100), header.FrameRate())
+	require.Equal(t, uint32(176400), header.ByteRate())
+	require.Equal(t, uint64(176400*8), header.BitRate())
+	require.Equal(t, uint16(2), header.ChannelCount())
+	require.Equal(t, uint32(3), header.FrameCount())
+	require.Equal(t, uint32(6), header.SampleCount())
+
+	seconds := 3.0 / 44100.0
+	require.Equal(t, time.Duration(seconds*1e9), header.PlayTime())
+
+	// Read the audio data.
+	buffer := make([]int16, header.SampleCount())
+	n, err := r.ReadInt16(buffer)
+	require.NoError(t, err)
+	require.Equal(t, []int16{-32768, -32767, 0, 1, 32766, 32767}, buffer[:n])
 }
 
 func TestE2E_Int16_Extensible(t *testing.T) {
@@ -283,6 +519,61 @@ func TestE2E_Int16_Extensible(t *testing.T) {
 		t,
 		[]int16{-32768, -32767, -32766, -32765, 0, 1, 2, 3, 32764, 32765, 32766, 32767},
 		readData,
+	)
+
+	r := NewReader(ioBytes.NewReader(data))
+
+	// Check header
+	header, err := r.Header()
+	require.NoError(t, err)
+
+	// Verify header fields have proper values
+	require.Equal(t, uint32(104), header.ReportedFileSizeBytes)
+	require.NotNil(t, header.FactData)
+	require.Nil(t, header.CueData)
+	require.Equal(t, uint32(24), header.DataBytes)
+	require.Empty(t, header.AdditionalChunks)
+
+	// Check the format chunk
+	require.Equal(t, FormatCodeExtensible, header.FormatData.FormatCode)
+	require.Equal(t, uint16(4), header.FormatData.ChannelCount)
+	require.Equal(t, uint32(44100), header.FormatData.FrameRate)
+	require.Equal(t, uint32(352800), header.FormatData.ByteRate)
+	require.Equal(t, uint16(8), header.FormatData.BlockAlign)
+	require.Equal(t, uint16(16), header.FormatData.BitsPerSample)
+	require.NotNil(t, header.FormatData.ValidBitsPerSample)
+	require.Equal(t, uint16(16), *header.FormatData.ValidBitsPerSample)
+	require.NotNil(t, header.FormatData.ChannelMask)
+	require.Equal(t, uint32(0), *header.FormatData.ChannelMask)
+	require.NotNil(t, header.FormatData.SubFormat)
+	require.Equal(t, FormatCodePCM, *header.FormatData.SubFormat)
+
+	// Check the fact chunk
+	require.Equal(t, uint32(3), header.FactData.SampleFrames)
+
+	// Check header helpers
+	require.NoError(t, header.Validate())
+	st, err := header.SampleType()
+	require.NoError(t, err)
+	require.Equal(t, SampleTypeInt16, st)
+	require.Equal(t, uint32(44100), header.FrameRate())
+	require.Equal(t, uint32(352800), header.ByteRate())
+	require.Equal(t, uint64(352800*8), header.BitRate())
+	require.Equal(t, uint16(4), header.ChannelCount())
+	require.Equal(t, uint32(3), header.FrameCount())
+	require.Equal(t, uint32(12), header.SampleCount())
+
+	seconds := 3.0 / 44100.0
+	require.Equal(t, time.Duration(seconds*1e9), header.PlayTime())
+
+	// Read the audio data.
+	buffer := make([]int16, header.SampleCount())
+	n, err := r.ReadInt16(buffer)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		[]int16{-32768, -32767, -32766, -32765, 0, 1, 2, 3, 32764, 32765, 32766, 32767},
+		buffer[:n],
 	)
 }
 
