@@ -1,3 +1,9 @@
+// wave-writer demonstrates how to use the audio-io 'core' and 'wave' packages
+// to generate a simple wave file containing a single channel audio signal.
+//
+// This example assumes that all audio data can be kept in memory at once. See
+// the 'stream-writer' example for a slightly more sophisticated use case (where
+// audio data is generated in blocks that can be written as they're generated).
 package main
 
 import (

@@ -1,3 +1,23 @@
+// stream-reader demonstrates how to use the audio-io 'core' and 'wave'
+// packages to stream (and process) individual blocks of audio data from a wave
+// file.
+//
+// This example reads blocks of audio data, normalizes those samples
+// (converting to float64), and then calculates some basic statistics for each
+// block. The block-level statistics are used to generate a crude ASCII
+// 'oscillogram' (a representation of the amplitude of the signal over time).
+//
+//	(+) 1.0 + ---------------------------------------- +
+//	        | █                █                 █     |
+//	        | █                █                 █     |
+//	        | █   █   █    █   █    █   █   █    █     |
+//	        | ██ ██   ███  █   ███  █   █   █    █     |
+//	    0.0 + ████████████████████████████████████████ +
+//	        | ██  █   █    █   █    █   █   █    █     |
+//	        | █                                  █     |
+//	        |                                          |
+//	        |                                          |
+//	(-) 1.0 + ---------------------------------------- +
 package main
 
 import (
@@ -21,7 +41,7 @@ func main() {
 	const graphHeight = 9
 
 	// Open the provided file for reading
-	file, err := os.Open("example.wav")
+	file, err := os.Open("voice.wav")
 	if err != nil {
 		failF(err)
 	}
@@ -60,9 +80,9 @@ func main() {
 	minValues := make([]float64, 0)
 	maxValues := make([]float64, 0)
 	for block := range c {
-		min, max := minMax(block)
-		minValues = append(minValues, min)
-		maxValues = append(maxValues, max)
+		minValue, maxValue := minMax(block)
+		minValues = append(minValues, minValue)
+		maxValues = append(maxValues, maxValue)
 	}
 
 	// Just for fun, we'll render a simple time-based visualization of the
@@ -188,17 +208,17 @@ func readNormalizedSamples(
 
 // minMax computes the min and max values for the given slice.
 func minMax(samples []float64) (float64, float64) {
-	min := samples[0]
-	max := samples[0]
+	minValue := samples[0]
+	maxValue := samples[0]
 	for _, s := range samples {
-		if s < min {
-			min = s
+		if s < minValue {
+			minValue = s
 		}
-		if s > max {
-			max = s
+		if s > maxValue {
+			maxValue = s
 		}
 	}
-	return min, max
+	return minValue, maxValue
 }
 
 // drawGraph renders the provided minimum and maximum values as a simple ASCII

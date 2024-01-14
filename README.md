@@ -5,8 +5,8 @@
 
 # Audio I/O
 
-`audio-io` is a collection of I/O utilities written in Go that simplify the
-process of working with audio data. Key features include:
+`audio-io` is a collection of I/O utilities written in pure Go that enable 
+developers to efficiently work with audio data. Key features include:
   * A `.wav` file writer that supports:
     - PCM `uint8`, `int16`, `int24`, and `int32` formats
     - IEEE float `float32` and `float64` formats
@@ -19,6 +19,10 @@ process of working with audio data. Key features include:
       `float32`, and `float64` audio formats
   * Interleavers/deinterleavers
     - Used to simplify the process of working with multi-channel audio files
+
+## Examples
+Several complete examples that demonstrate how to use this library are included
+in the `examples` folder.
 
 ## Writing wave files
 The `wave.Writer` type can be used to generate .wav files from a set of audio 
@@ -81,22 +85,22 @@ organized by *sample*, rather than by *channel*.
 The table below visually demonstrates how samples are laid out in a slice:
 
 ```text
-+--------+--------+----------------------------+
-| Frame |  Index |                       Value |
-+--------+--------+----------------------------+
-|        |      0 |       Channel 0 - Sample 0 | 
-|        |      1 |       Channel 1 - Sample 0 | 
-|   0    |      2 |       Channel 2 - Sample 0 | 
-|                     ...                      |
-|        |  N - 1 | Channel (N - 1) - Sample 0 |
-+--------+--------+----------------------------+
-|        |      N |       Channel 0 - Sample 1 | 
-|        |  N + 1 |       Channel 1 - Sample 1 | 
-|   1    |  N + 2 |       Channel 2 - Sample 1 | 
-|                     ...                      |
-|        | 2N - 1 | Channel (N - 1) - Sample 1 |
-+--------+--------+----------------------------+
-|                     ...                      |
++--------+--------------+----------------------------+
+|  Frame |  Slice Index |                       Value |
++--------+--------------+----------------------------+
+|        |            0 |       Channel 0 - Sample 0 | 
+|        |            1 |       Channel 1 - Sample 0 | 
+|   0    |            2 |       Channel 2 - Sample 0 | 
+|                        ...                         |
+|        |        N - 1 | Channel (N - 1) - Sample 0 |
++--------+--------------+----------------------------+
+|        |            N |       Channel 0 - Sample 1 | 
+|        |        N + 1 |       Channel 1 - Sample 1 | 
+|   1    |        N + 2 |       Channel 2 - Sample 1 | 
+|                        ...                         |
+|        |       2N - 1 | Channel (N - 1) - Sample 1 |
++--------+--------------+----------------------------+
+|                        ...                         |
 ```
 
 Applications that generate multi-channel audio will sometimes choose to keep
@@ -124,15 +128,11 @@ conversions between audio sample types (e.g. `int32` and `float32`). PCM types,
 those types, while IEEE types (`float32` and `float64`) are assumed to use the
 [-1.0, 1.0] range.
 
-A quick note on `int24`: most programming languages (including Go) don't 
-provide a native 24-bit integer type, so we usually use `int32` as a container 
-type with the understanding that values are expected to fall in the range 
-[-8388608, 8388607]. There is special logic where needed in the library to pack 
-and unpack 24-bit integers as appropriate.
-
-## Examples
-Several complete examples that demonstrate how to use this library are included 
-in the `examples` folder. 
+A quick note on `int24`: most programming languages (including Go) lack a 
+native 24-bit integer type, so we use `int32` as a container type with the 
+understanding that values are expected to fall in the range [-8388608, 8388607]. 
+The library will pack and unpack 24-bit integers (mapping to 3-byte sequences) 
+as needed.
 
 ## Developer Information
 

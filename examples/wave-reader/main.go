@@ -1,3 +1,9 @@
+// wave-reader demonstrates how to use the audio-io 'core' and 'wave' packages
+// to extract all the normalized audio data from a wave file.
+//
+// This example assumes that the entire wave file can be read into memory at
+// once. See the 'stream-reader' example for a slightly more sophisticated use
+// case (where audio data is read in blocks that can be processed individually).
 package main
 
 import (
@@ -38,11 +44,11 @@ func main() {
 	fmt.Println()
 
 	// Compute some example statistics on the normalized audio data
-	min, max := minMax(normalizedAudioData)
-	factor := math.Max(math.Abs(min), math.Abs(max))
+	minValue, maxValue := minMax(normalizedAudioData)
+	factor := math.Max(math.Abs(minValue), math.Abs(maxValue))
 	gainDb := 20 * math.Log10(factor)
-	fmt.Printf("Min value (normalized): %f\n", min)
-	fmt.Printf("Max value (normalized): %+f\n", max)
+	fmt.Printf("Min value (normalized): %f\n", minValue)
+	fmt.Printf("Max value (normalized): %+f\n", maxValue)
 	fmt.Printf("Estimated gain (dB):    %f\n", gainDb)
 }
 
@@ -195,17 +201,17 @@ func readNormalizedAudioData(r *wave.Reader) ([]float64, error) {
 
 // minMax computes the min and max values for the given slice.
 func minMax(samples []float64) (float64, float64) {
-	min := samples[0]
-	max := samples[0]
+	minValue := samples[0]
+	maxValue := samples[0]
 	for _, s := range samples {
-		if s < min {
-			min = s
+		if s < minValue {
+			minValue = s
 		}
-		if s > max {
-			max = s
+		if s > maxValue {
+			maxValue = s
 		}
 	}
-	return min, max
+	return minValue, maxValue
 }
 
 func failF(err error) {
