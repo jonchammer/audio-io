@@ -61,16 +61,18 @@ type Writer struct {
 //     be used. Note that it is the caller's responsibility to ensure data is
 //     in the correct format, though the quantizers/dequantizers in the core
 //     package can help with that process.
-//   - sampleRate - The sample rate is measured in samples per second. Common
+//   - frameRate - The frame rate is measured in frames per second. Common
 //     values are 44100 Hz (normal for CD audio) and 48000 Hz (common for
-//     movies).
+//     cinema). Note that the term "sample rate" is more common, but isn't as
+//     well-defined in terms of multi-channel data. We use "frame rate" to be
+//     more precise about what is expected of the caller.
 //
 // WriterOptions can be used to provide additional optional inputs (e.g.
 // setting the number of channels).
 func NewWriter(
 	baseWriter io.WriteSeeker,
 	sampleType SampleType,
-	sampleRate uint32,
+	frameRate uint32,
 	opts ...WriterOption,
 ) (*Writer, error) {
 
@@ -92,7 +94,7 @@ func NewWriter(
 
 	// The user-provided fields will determine the format chunk fields
 	formatChunkData := NewFormatChunkData(
-		options.channelCount, sampleRate, sampleType,
+		options.channelCount, frameRate, sampleType,
 	)
 
 	// It's generally agreed that regular PCM data doesn't require a 'fact'
@@ -114,7 +116,7 @@ func NewWriter(
 }
 
 // WriteUint8 is used to add uint8 audio samples. Audio data is assumed to be
-// organized into samples consisting of multiple blocks, one block per channel.
+// organized into frames consisting of multiple samples, one sample per channel.
 // WriteUint8 will fail if the SampleType of the Writer is not set to
 // SampleTypeUint8.
 func (w *Writer) WriteUint8(data []uint8) error {
@@ -132,7 +134,7 @@ func (w *Writer) WriteUint8(data []uint8) error {
 }
 
 // WriteInt16 is used to add uint8 audio samples. Audio data is assumed to be
-// organized into samples consisting of multiple blocks, one block per channel.
+// organized into frames consisting of multiple samples, one sample per channel.
 // WriteInt16 will fail if the SampleType of the Writer is not set to
 // SampleTypeInt16.
 func (w *Writer) WriteInt16(data []int16) error {
@@ -151,7 +153,7 @@ func (w *Writer) WriteInt16(data []int16) error {
 }
 
 // WriteInt24 is used to add uint8 audio samples. Audio data is assumed to be
-// organized into samples consisting of multiple blocks, one block per channel.
+// organized into frames consisting of multiple samples, one sample per channel.
 // WriteInt24 will fail if the SampleType of the Writer is not set to
 // SampleTypeInt24.
 //
@@ -178,7 +180,7 @@ func (w *Writer) WriteInt24(data []int32) error {
 }
 
 // WriteInt32 is used to add uint8 audio samples. Audio data is assumed to be
-// organized into samples consisting of multiple blocks, one block per channel.
+// organized into frames consisting of multiple samples, one sample per channel.
 // WriteInt32 will fail if the SampleType of the Writer is not set to
 // SampleTypeInt32.
 func (w *Writer) WriteInt32(data []int32) error {
@@ -197,7 +199,7 @@ func (w *Writer) WriteInt32(data []int32) error {
 }
 
 // WriteFloat32 is used to add uint8 audio samples. Audio data is assumed to be
-// organized into samples consisting of multiple blocks, one block per channel.
+// organized into frames consisting of multiple samples, one sample per channel.
 // WriteFloat32 will fail if the SampleType of the Writer is not set to
 // SampleTypeFloat32.
 func (w *Writer) WriteFloat32(data []float32) error {
@@ -216,7 +218,7 @@ func (w *Writer) WriteFloat32(data []float32) error {
 }
 
 // WriteFloat64 is used to add uint8 audio samples. Audio data is assumed to be
-// organized into samples consisting of multiple blocks, one block per channel.
+// organized into frames consisting of multiple samples, one sample per channel.
 // WriteFloat64 will fail if the SampleType of the Writer is not set to
 // SampleTypeFloat64.
 func (w *Writer) WriteFloat64(data []float64) error {
@@ -257,8 +259,7 @@ func (w *Writer) write(data any) error {
 	return nil
 }
 
-// writeInt24 is a specialization of write to be used
-// int24 data.
+// writeInt24 is a specialization of write to be used with int24 data.
 func (w *Writer) writeInt24(data []int32) error {
 	if w.dataBytes == 0 {
 		err := w.writePreamble()
@@ -360,10 +361,7 @@ func (w *Writer) writePreamble() error {
 
 	// The preamble is represented by a hierarchy of chunks. The root chunk
 	// describes (recursively) the entire file structure.
-	preambleBytes := w.getRootChunk().Serialize()
-
-	// Write the preamble to the writer
-	_, err = w.baseWriter.Write(preambleBytes)
+	_, err = w.getRootChunk().WriteTo(w.baseWriter)
 	if err != nil {
 		return err
 	}
@@ -390,7 +388,7 @@ func (w *Writer) getRootChunk() Chunk {
 	subChunks = append(subChunks, NewDataChunkHeader(w.dataBytes))
 
 	return NewRIFFChunk(&RIFFChunkData{
-		subChunks: subChunks,
+		SubChunks: subChunks,
 	})
 }
 
@@ -409,9 +407,8 @@ type WriterOption func(*writerOptions) error
 // NewWriter. A channel count of 1 will be assumed as the default unless
 // explicitly overwritten by the user.
 //
-// Note that all WriteXXX APIs assume that samples are contiguous,
-// so all blocks for a given sample should be placed next to one other in
-// memory.
+// Note that all WriteXXX APIs assume that frames are contiguous, so all
+// samples for a given frame should be placed next to one other in memory.
 func WithChannelCount(channelCount uint16) WriterOption {
 	return func(opts *writerOptions) error {
 		opts.channelCount = channelCount

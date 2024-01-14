@@ -1,3 +1,9 @@
+// wave-writer demonstrates how to use the audio-io 'core' and 'wave' packages
+// to generate a simple wave file containing a single channel audio signal.
+//
+// This example assumes that all audio data can be kept in memory at once. See
+// the 'stream-writer' example for a slightly more sophisticated use case (where
+// audio data is generated in blocks that can be written as they're generated).
 package main
 
 import (
@@ -17,13 +23,13 @@ func main() {
 		duration      = 2 * time.Second
 		sampleRate    = 44100
 		sineFrequency = 440.0 // The note 'A'
-		sineGain      = 0.25  // Amplitude multiplier
+		sineGainDb    = -12.0 // Gain of the signal, measured in decibels
 	)
 
 	// 1. Generate a single channel sine wave for testing. We'll generate the
 	// data using high-precision float64 samples, but we'll quantize the data
 	// before we write it to disk.
-	samples := generateSineWave(duration, sampleRate, sineFrequency, sineGain)
+	samples := generateSineWave(duration, sampleRate, sineFrequency, sineGainDb)
 
 	// 2. Open a file to store the resulting .wav file.
 	f, err := os.Create("example.wav")
@@ -45,15 +51,16 @@ func generateSineWave(
 	duration time.Duration,
 	sampleRate int,
 	frequency float64,
-	gain float64,
+	gainDb float64,
 ) []float64 {
 
 	const Tau = 2 * math.Pi
 
+	factor := math.Pow(10.0, gainDb/20.0)
 	totalSamples := int(duration.Seconds() * float64(sampleRate))
 	data := make([]float64, totalSamples)
 	for i := 0; i < totalSamples; i++ {
-		data[i] = gain * math.Sin(Tau*frequency*(float64(i)/float64(sampleRate)))
+		data[i] = factor * math.Sin(Tau*frequency*(float64(i)/float64(sampleRate)))
 	}
 	return data
 }

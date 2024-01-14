@@ -1,8 +1,10 @@
 package wave
 
 import (
+	"bytes"
 	"encoding/binary"
 	"github.com/stretchr/testify/require"
+	"io"
 	"testing"
 )
 
@@ -30,7 +32,7 @@ func TestChunk_Serialize(t *testing.T) {
 
 func TestRIFFChunkData_Serialize_Normal(t *testing.T) {
 	data := RIFFChunkData{
-		subChunks: []Chunk{
+		SubChunks: []Chunk{
 			{
 				ID:   [4]byte{'a', 'b', 'c', 'd'},
 				Size: 4,
@@ -63,6 +65,143 @@ func TestRIFFChunkData_Serialize_Empty(t *testing.T) {
 	require.Equal(t, uint32(4), totalSizeBytes)
 }
 
+func TestReadRIFFChunk_Normal(t *testing.T) {
+
+	var payload bytes.Buffer
+	payload.Write(RIFFChunkID[:])    // "RIFF"
+	payload.Write(uint32ToBytes(78)) // Example file size
+	payload.Write(WaveID[:])         // "WAVE"
+	payload.Write([]byte{            // Add a few example chunks
+		'a', 'b', 'c', 'd',
+		0x04, 0x00, 0x00, 0x00,
+		0x01, 0x02, 0x03, 0x04,
+		'e', 'f', 'g', 'h',
+		0x04, 0x00, 0x00, 0x00,
+		0x05, 0x06, 0x07, 0x08,
+	})
+	payload.Write(DataChunkID[:])    // "data"
+	payload.Write(uint32ToBytes(42)) // Data size in bytes
+	payload.Write(make([]byte, 42))
+
+	fileSize, riffChunkData, err := ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.NoError(t, err)
+	require.Equal(t, uint32(78+8), fileSize) // +8 for the RIFF header
+	require.NotNil(t, riffChunkData)
+	require.Equal(t, 3, len(riffChunkData.SubChunks))
+
+	chunk := riffChunkData.SubChunks[0]
+	require.Equal(t, [4]byte{'a', 'b', 'c', 'd'}, chunk.ID)
+	require.Equal(t, uint32(4), chunk.Size)
+	require.Equal(t, []byte{0x01, 0x02, 0x03, 0x04}, chunk.Body)
+
+	chunk = riffChunkData.SubChunks[1]
+	require.Equal(t, [4]byte{'e', 'f', 'g', 'h'}, chunk.ID)
+	require.Equal(t, uint32(4), chunk.Size)
+	require.Equal(t, []byte{0x05, 0x06, 0x07, 0x08}, chunk.Body)
+
+	chunk = riffChunkData.SubChunks[2]
+	require.Equal(t, [4]byte{'d', 'a', 't', 'a'}, chunk.ID)
+	require.Equal(t, uint32(42), chunk.Size)
+	require.Empty(t, chunk.Body)
+}
+
+func TestReadRIFFChunk_InvalidHeader(t *testing.T) {
+
+	var payload bytes.Buffer
+
+	// Incomplete ID
+	payload.Write([]byte{'R', 'I', 'F'})
+	_, _, err := ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+
+	// Invalid RIFF ID
+	payload.Write([]byte{'B', 'A', 'D', ' '})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, ErrRIFFChunkCorruptedHeader)
+	payload.Reset()
+
+	// Incomplete file size
+	payload.Write(RIFFChunkID[:]) // "RIFF"
+	payload.Write([]byte{0x04, 0x00, 0x00})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+
+	// Incomplete WAVE ID
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write([]byte{'W', 'A', 'V'})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+
+	// Invalid Wave ID
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write([]byte{'B', 'A', 'D', ' '})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, ErrRIFFChunkCorruptedHeader)
+	payload.Reset()
+}
+
+func TestReadRIFFChunk_CorruptedChunk(t *testing.T) {
+
+	var payload bytes.Buffer
+
+	// Incomplete chunk ID
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write(WaveID[:])          // "WAVE"
+	payload.Write([]byte{'a', 'b', 'c'})
+	_, _, err := ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+
+	// Incomplete chunk size
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write(WaveID[:])          // "WAVE"
+	payload.Write([]byte{
+		'a', 'b', 'c', 'd',
+		0x04, 0x00, 0x00,
+	})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+
+	// Incomplete chunk body
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write(WaveID[:])          // "WAVE"
+	payload.Write([]byte{
+		'a', 'b', 'c', 'd',
+		0x04, 0x00, 0x00, 0x00,
+		0x01, 0x02, 0x03,
+	})
+	_, _, err = ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	payload.Reset()
+}
+
+func TestReadRIFFChunk_MissingDataChunk(t *testing.T) {
+	var payload bytes.Buffer
+	payload.Write(RIFFChunkID[:])     // "RIFF"
+	payload.Write(uint32ToBytes(100)) // Example file size
+	payload.Write(WaveID[:])          // "WAVE"
+	payload.Write([]byte{             // Add a few example chunks
+		'a', 'b', 'c', 'd',
+		0x04, 0x00, 0x00, 0x00,
+		0x01, 0x02, 0x03, 0x04,
+		'e', 'f', 'g', 'h',
+		0x04, 0x00, 0x00, 0x00,
+		0x05, 0x06, 0x07, 0x08,
+	})
+
+	_, _, err := ReadRIFFChunk(bytes.NewReader(payload.Bytes()))
+	require.ErrorIs(t, err, io.EOF)
+}
+
 // ------------------------------------------------------------------------- //
 // Format Chunk Data
 // ------------------------------------------------------------------------- //
@@ -74,7 +213,7 @@ func TestNewFormatChunkData_Uint8(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodePCM,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           88200,
 		BlockAlign:         2,
 		BitsPerSample:      8,
@@ -91,7 +230,7 @@ func TestNewFormatChunkData_Uint8(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       4,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           176400,
 		BlockAlign:         4,
 		BitsPerSample:      8,
@@ -108,7 +247,7 @@ func TestNewFormatChunkData_Int16(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodePCM,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           176400,
 		BlockAlign:         4,
 		BitsPerSample:      16,
@@ -125,7 +264,7 @@ func TestNewFormatChunkData_Int16(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       4,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           352800,
 		BlockAlign:         8,
 		BitsPerSample:      16,
@@ -145,7 +284,7 @@ func TestNewFormatChunkData_Int24(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           264600,
 		BlockAlign:         6,
 		BitsPerSample:      24,
@@ -165,7 +304,7 @@ func TestNewFormatChunkData_Int32(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           352800,
 		BlockAlign:         8,
 		BitsPerSample:      32,
@@ -182,7 +321,7 @@ func TestNewFormatChunkData_Float32(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeIEEEFloat,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           352800,
 		BlockAlign:         8,
 		BitsPerSample:      32,
@@ -199,7 +338,7 @@ func TestNewFormatChunkData_Float32(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       4,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           705600,
 		BlockAlign:         16,
 		BitsPerSample:      32,
@@ -216,7 +355,7 @@ func TestNewFormatChunkData_Float64(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeIEEEFloat,
 		ChannelCount:       2,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           705600,
 		BlockAlign:         16,
 		BitsPerSample:      64,
@@ -233,7 +372,7 @@ func TestNewFormatChunkData_Float64(t *testing.T) {
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeExtensible,
 		ChannelCount:       4,
-		SampleRate:         44100,
+		FrameRate:          44100,
 		ByteRate:           1411200,
 		BlockAlign:         32,
 		BitsPerSample:      64,
@@ -304,7 +443,7 @@ func TestFormatChunkData_Serialize_PCM(t *testing.T) {
 	require.Equal(t, 16, len(result))
 	require.Equal(t, uint16(data.FormatCode), binary.LittleEndian.Uint16(result[:2]))
 	require.Equal(t, data.ChannelCount, binary.LittleEndian.Uint16(result[2:4]))
-	require.Equal(t, data.SampleRate, binary.LittleEndian.Uint32(result[4:8]))
+	require.Equal(t, data.FrameRate, binary.LittleEndian.Uint32(result[4:8]))
 	require.Equal(t, data.ByteRate, binary.LittleEndian.Uint32(result[8:12]))
 	require.Equal(t, data.BlockAlign, binary.LittleEndian.Uint16(result[12:14]))
 	require.Equal(t, data.BitsPerSample, binary.LittleEndian.Uint16(result[14:16]))
@@ -320,7 +459,7 @@ func TestFormatChunkData_Serialize_IEEEFloat(t *testing.T) {
 	require.Equal(t, 18, len(result))
 	require.Equal(t, uint16(data.FormatCode), binary.LittleEndian.Uint16(result[:2]))
 	require.Equal(t, data.ChannelCount, binary.LittleEndian.Uint16(result[2:4]))
-	require.Equal(t, data.SampleRate, binary.LittleEndian.Uint32(result[4:8]))
+	require.Equal(t, data.FrameRate, binary.LittleEndian.Uint32(result[4:8]))
 	require.Equal(t, data.ByteRate, binary.LittleEndian.Uint32(result[8:12]))
 	require.Equal(t, data.BlockAlign, binary.LittleEndian.Uint16(result[12:14]))
 	require.Equal(t, data.BitsPerSample, binary.LittleEndian.Uint16(result[14:16]))
@@ -337,7 +476,7 @@ func TestFormatChunkData_Serialize_Extensible(t *testing.T) {
 	require.Equal(t, 40, len(result))
 	require.Equal(t, uint16(data.FormatCode), binary.LittleEndian.Uint16(result[:2]))
 	require.Equal(t, data.ChannelCount, binary.LittleEndian.Uint16(result[2:4]))
-	require.Equal(t, data.SampleRate, binary.LittleEndian.Uint32(result[4:8]))
+	require.Equal(t, data.FrameRate, binary.LittleEndian.Uint32(result[4:8]))
 	require.Equal(t, data.ByteRate, binary.LittleEndian.Uint32(result[8:12]))
 	require.Equal(t, data.BlockAlign, binary.LittleEndian.Uint16(result[12:14]))
 	require.Equal(t, data.BitsPerSample, binary.LittleEndian.Uint16(result[14:16]))
@@ -374,6 +513,93 @@ func TestFormatChunkData_Serialize_InvalidExtensible(t *testing.T) {
 	require.ErrorIs(t, err, ErrFmtChunkInvalidExtensible)
 }
 
+func TestDeserializeFormatChunk_PCM(t *testing.T) {
+
+	// "fmt" payload for 2 channel, 16-bit PCM samples
+	var payload bytes.Buffer
+	payload.Write(uint16ToBytes(1))             // Format Code
+	payload.Write(uint16ToBytes(2))             // Channel Count
+	payload.Write(uint32ToBytes(44100))         // Frame Rate
+	payload.Write(uint32ToBytes(44100 * 2 * 2)) // Byte Rate
+	payload.Write(uint16ToBytes(2 * 2))         // Block Align
+	payload.Write(uint16ToBytes(8 * 2))         // Bits per Sample
+
+	formatChunkData, err := DeserializeFormatChunk(payload.Bytes())
+	require.NoError(t, err)
+	require.Equal(t, FormatCodePCM, formatChunkData.FormatCode)
+	require.Equal(t, uint16(2), formatChunkData.ChannelCount)
+	require.Equal(t, uint32(44100), formatChunkData.FrameRate)
+	require.Equal(t, uint32(44100*2*2), formatChunkData.ByteRate)
+	require.Equal(t, uint16(4), formatChunkData.BlockAlign)
+	require.Equal(t, uint16(16), formatChunkData.BitsPerSample)
+	require.Nil(t, formatChunkData.ValidBitsPerSample)
+	require.Nil(t, formatChunkData.ChannelMask)
+	require.Nil(t, formatChunkData.SubFormat)
+}
+
+func TestDeserializeFormatChunk_IEEEFloat(t *testing.T) {
+
+	// "fmt" payload for 2 channel, 32-bit IEEE samples
+	var payload bytes.Buffer
+	payload.Write(uint16ToBytes(3))             // Format Code
+	payload.Write(uint16ToBytes(2))             // Channel Count
+	payload.Write(uint32ToBytes(44100))         // Frame Rate
+	payload.Write(uint32ToBytes(44100 * 4 * 2)) // Byte Rate
+	payload.Write(uint16ToBytes(4 * 2))         // Block Align
+	payload.Write(uint16ToBytes(32))            // Bits per Sample
+	payload.Write(uint16ToBytes(0))             // Extension Size
+
+	formatChunkData, err := DeserializeFormatChunk(payload.Bytes())
+	require.NoError(t, err)
+	require.Equal(t, FormatCodeIEEEFloat, formatChunkData.FormatCode)
+	require.Equal(t, uint16(2), formatChunkData.ChannelCount)
+	require.Equal(t, uint32(44100), formatChunkData.FrameRate)
+	require.Equal(t, uint32(44100*4*2), formatChunkData.ByteRate)
+	require.Equal(t, uint16(8), formatChunkData.BlockAlign)
+	require.Equal(t, uint16(32), formatChunkData.BitsPerSample)
+	require.Nil(t, formatChunkData.ValidBitsPerSample)
+	require.Nil(t, formatChunkData.ChannelMask)
+	require.Nil(t, formatChunkData.SubFormat)
+}
+
+func TestDeserializeFormatChunk_Extensible(t *testing.T) {
+
+	// "fmt" payload for 4 channel, 16-bit PCM samples
+	var payload bytes.Buffer
+	payload.Write(uint16ToBytes(0xFFFE))        // Format Code
+	payload.Write(uint16ToBytes(4))             // Channel Count
+	payload.Write(uint32ToBytes(44100))         // Frame Rate
+	payload.Write(uint32ToBytes(44100 * 2 * 4)) // Byte Rate
+	payload.Write(uint16ToBytes(2 * 4))         // Block Align
+	payload.Write(uint16ToBytes(8 * 2))         // Bits per Sample
+	payload.Write(uint16ToBytes(22))            // Extension Size
+	payload.Write(uint16ToBytes(8 * 2))         // Valid Bits Per Sample
+	payload.Write(uint32ToBytes(0x12345678))    // Speaker Mask
+	payload.Write(uint16ToBytes(0x01))          // Sub-format
+	payload.Write(make([]byte, 14))             // Remainder of GUID
+
+	formatChunkData, err := DeserializeFormatChunk(payload.Bytes())
+	require.NoError(t, err)
+	require.Equal(t, FormatCodeExtensible, formatChunkData.FormatCode)
+	require.Equal(t, uint16(4), formatChunkData.ChannelCount)
+	require.Equal(t, uint32(44100), formatChunkData.FrameRate)
+	require.Equal(t, uint32(44100*2*4), formatChunkData.ByteRate)
+	require.Equal(t, uint16(8), formatChunkData.BlockAlign)
+	require.Equal(t, uint16(16), formatChunkData.BitsPerSample)
+	require.NotNil(t, formatChunkData.ValidBitsPerSample)
+	require.Equal(t, uint16(16), *formatChunkData.ValidBitsPerSample)
+	require.NotNil(t, formatChunkData.ChannelMask)
+	require.Equal(t, uint32(0x12345678), *formatChunkData.ChannelMask)
+	require.NotNil(t, formatChunkData.SubFormat)
+	require.Equal(t, FormatCodePCM, *formatChunkData.SubFormat)
+}
+
+func TestDeserializeFormatChunk_Corrupted(t *testing.T) {
+	payload := []byte{0x00, 0x01, 0x02}
+	_, err := DeserializeFormatChunk(payload)
+	require.ErrorIs(t, err, ErrFmtChunkCorruptedPayload)
+}
+
 // ------------------------------------------------------------------------- //
 // Fact Chunk Data
 // ------------------------------------------------------------------------- //
@@ -388,4 +614,17 @@ func TestFactChunkData_Serialize(t *testing.T) {
 	}
 	result := data.Serialize()
 	require.Equal(t, uint32(128), binary.LittleEndian.Uint32(result[:4]))
+}
+
+func TestDeserializeFactChunk_Normal(t *testing.T) {
+	payload := uint32ToBytes(42)
+	data, err := DeserializeFactChunk(payload)
+	require.NoError(t, err)
+	require.Equal(t, uint32(42), data.SampleFrames)
+}
+
+func TestDeserializeFactChunk_Corrupted(t *testing.T) {
+	payload := []byte{0x00, 0x01, 0x02}
+	_, err := DeserializeFactChunk(payload)
+	require.ErrorIs(t, err, ErrFactChunkCorruptedPayload)
 }

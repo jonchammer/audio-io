@@ -1,3 +1,12 @@
+// stream-writer demonstrates how to use the audio-io 'core' and 'wave'
+// packages to generate blocks of audio data that can be streamed to a wave
+// file.
+//
+// Streaming has the potential to be more efficient for larger audio files,
+// since the entire audio file does not have to be stored in memory.
+//
+// Streaming is also useful for cases where the duration of the audio data is
+// unknown at runtime (e.g. when recording from a microphone).
 package main
 
 import (
