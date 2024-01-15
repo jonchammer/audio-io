@@ -105,7 +105,7 @@ func (h *Header) Validate() error {
 		return fmt.Errorf("format code: '%d' was not recognized", h.FormatData.FormatCode)
 	}
 
-	// Bytes per second
+	// Byte rate
 	expectedByteRate := h.FormatData.FrameRate * m * uint32(h.FormatData.ChannelCount)
 	if h.FormatData.ByteRate != expectedByteRate {
 		return fmt.Errorf(
@@ -137,6 +137,19 @@ func (h *Header) Validate() error {
 		}
 	}
 
+	// Extensions
+	if h.FormatData.FormatCode != FormatCodeExtensible {
+		if h.FormatData.ValidBitsPerSample != nil {
+			return errors.New("valid bits per sample should only be set if format code is extensible")
+		}
+		if h.FormatData.ChannelMask != nil {
+			return errors.New("channel mask should only be set if format code is extensible")
+		}
+		if h.FormatData.SubFormat != nil {
+			return errors.New("sub format should only be set if format code is extensible")
+		}
+	}
+
 	return nil
 }
 
@@ -146,6 +159,9 @@ func (h *Header) SampleType() (SampleType, error) {
 	fc, err := h.FormatData.EffectiveFormatCode()
 	if err != nil {
 		return SampleType(-1), err
+	}
+	if !fc.IsValid() {
+		return SampleType(-1), fmt.Errorf("invalid format code: '%s'", fc)
 	}
 
 	if fc == FormatCodePCM {
@@ -170,7 +186,7 @@ func (h *Header) SampleType() (SampleType, error) {
 	case 64:
 		return SampleTypeFloat64, nil
 	default:
-		return SampleType(-1), fmt.Errorf("unknown IEEE type: '%d' bits per sample", h.FormatData.BitsPerSample)
+		return SampleType(-1), fmt.Errorf("unknown IEEE float type: '%d' bits per sample", h.FormatData.BitsPerSample)
 	}
 }
 
