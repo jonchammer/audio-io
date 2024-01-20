@@ -628,3 +628,76 @@ func TestDeserializeFactChunk_Corrupted(t *testing.T) {
 	_, err := DeserializeFactChunk(payload)
 	require.ErrorIs(t, err, ErrFactChunkCorruptedPayload)
 }
+
+// ------------------------------------------------------------------------- //
+// Cue Chunk Data
+// ------------------------------------------------------------------------- //
+
+func TestDeserializeCueChunk_Normal(t *testing.T) {
+	var payload bytes.Buffer
+	payload.Write(uint32ToBytes(2)) // Number of cue points
+
+	// Cue point 0
+	payload.Write(uint32ToBytes(1))  // ID
+	payload.Write(uint32ToBytes(0))  // Position
+	payload.Write(DataChunkID[:])    // FCC Chunk ID (typically 'data')
+	payload.Write(uint32ToBytes(0))  // Chunk start (normally 0)
+	payload.Write(uint32ToBytes(42)) // Block start
+	payload.Write(uint32ToBytes(14)) // Sample offset
+
+	// Cue point 1
+	payload.Write(uint32ToBytes(2))  // ID
+	payload.Write(uint32ToBytes(0))  // Position
+	payload.Write(DataChunkID[:])    // FCC Chunk ID (typically 'data')
+	payload.Write(uint32ToBytes(0))  // Chunk start (normally 0)
+	payload.Write(uint32ToBytes(88)) // Block start
+	payload.Write(uint32ToBytes(64)) // Sample offset
+
+	cueChunkData, err := DeserializeCueChunk(payload.Bytes())
+	require.NoError(t, err)
+
+	expected := CueChunkData{
+		CuePoints: []CuePoint{
+			{
+				ID:           1,
+				Position:     0,
+				FCCChunk:     DataChunkID,
+				ChunkStart:   0,
+				BlockStart:   42,
+				SampleOffset: 14,
+			},
+			{
+				ID:           2,
+				Position:     0,
+				FCCChunk:     DataChunkID,
+				ChunkStart:   0,
+				BlockStart:   88,
+				SampleOffset: 64,
+			},
+		},
+	}
+	require.Equal(t, expected, *cueChunkData)
+}
+
+func TestDeserializeCueChunk_Corrupted(t *testing.T) {
+
+	// Unable to read the cue point count
+	payload := []byte{0x00, 0x01, 0x02}
+	_, err := DeserializeCueChunk(payload)
+	require.ErrorIs(t, err, ErrCueChunkCorruptedPayload)
+
+	// Missing cue point data
+	payload = uint32ToBytes(2)
+	_, err = DeserializeCueChunk(payload)
+	require.ErrorIs(t, err, ErrCueChunkCorruptedPayload)
+
+	// Corrupted cue point data
+	payload = []byte{
+		0x02, 0x00, 0x00, 0x00, // Number of cue points
+		0x01, 0x00, 0x00, 0x00, // Start of a valid cue point
+		0x00, 0x00, 0x00, 0x00,
+		0x64, 0x61, 0x74, 0x61, // ... but truncated
+	}
+	_, err = DeserializeCueChunk(payload)
+	require.ErrorIs(t, err, ErrCueChunkCorruptedPayload)
+}

@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+var (
+	ErrHeaderMissingFmtChunk = errors.New("no 'fmt' chunk present in file")
+)
+
 // A Header is a preprocessed view of the beginning of a wave file, typically
 // used when reading wave files (as opposed to writing them).
 type Header struct {
@@ -63,7 +67,7 @@ func parseHeaderFromRIFFChunk(
 			}
 		case CueChunkID:
 			{
-				cueChunk, err = DeserializeCueChunkData(chunk.Body)
+				cueChunk, err = DeserializeCueChunk(chunk.Body)
 				if err != nil {
 					return nil, err
 				}
@@ -79,7 +83,7 @@ func parseHeaderFromRIFFChunk(
 
 	// Sanity checks
 	if formatChunk == nil {
-		return nil, errors.New("no 'fmt' chunk present in file")
+		return nil, ErrHeaderMissingFmtChunk
 	}
 
 	return &Header{
