@@ -5,6 +5,170 @@ import (
 	"testing"
 )
 
+func TestParseHeaderFromRIFFChunk_Normal(t *testing.T) {
+
+	totalFileSize := uint32(42)
+	riffChunkData := &RIFFChunkData{
+		SubChunks: []Chunk{
+			{
+				ID:   FormatChunkID,
+				Size: 16,
+				Body: []byte{
+					0x01, 0x00, 0x02, 0x00,
+					0x44, 0xAC, 0x00, 0x00,
+					0x10, 0xB1, 0x02, 0x00,
+					0x04, 0x00, 0x10, 0x00,
+				},
+			},
+			{
+				ID:   FactChunkID,
+				Size: 4,
+				Body: []byte{0x80, 0x00, 0x00, 0x00},
+			},
+			{
+				ID:   CueChunkID,
+				Size: 28,
+				Body: []byte{
+					0x01, 0x00, 0x00, 0x00,
+					0x01, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00,
+					0x64, 0x61, 0x74, 0x61,
+					0x00, 0x00, 0x00, 0x00,
+					0x2A, 0x00, 0x00, 0x00,
+					0x0E, 0x00, 0x00, 0x00,
+				},
+			},
+			{
+				ID:   [4]byte{'z', 'e', 'r', 'o'},
+				Size: 8,
+				Body: []byte{
+					0x00, 0x01, 0x02, 0x03,
+					0x04, 0x05, 0x06, 0x07,
+				},
+			},
+			{
+				ID:   DataChunkID,
+				Size: 8,
+				Body: []byte{
+					0x10, 0x11, 0x12, 0x13,
+					0x14, 0x15, 0x16, 0x17,
+				},
+			},
+		},
+	}
+
+	header, err := parseHeaderFromRIFFChunk(totalFileSize, riffChunkData)
+	require.NoError(t, err)
+
+	require.Equal(t, uint32(42), totalFileSize)
+
+	// Check format section
+	expectedFmt := NewFormatChunkData(2, 44100, SampleTypeInt16)
+	require.Equal(t, expectedFmt, header.FormatData)
+
+	// Check fact section
+	expectedFact := FactChunkData{
+		SampleFrames: 128,
+	}
+	require.NotNil(t, header.FactData)
+	require.Equal(t, expectedFact, *header.FactData)
+
+	// Check cue section
+	expectedCue := CueChunkData{
+		CuePoints: []CuePoint{
+			{
+				ID:           1,
+				Position:     0,
+				FCCChunk:     DataChunkID,
+				ChunkStart:   0,
+				BlockStart:   42,
+				SampleOffset: 14,
+			},
+		},
+	}
+	require.NotNil(t, header.CueData)
+	require.Equal(t, expectedCue, *header.CueData)
+
+	// Check data section
+	require.Equal(t, uint32(8), header.DataBytes)
+
+	// Check additional chunks
+	require.Equal(t, []Chunk{
+		{
+			ID:   [4]byte{'z', 'e', 'r', 'o'},
+			Size: 8,
+			Body: []byte{
+				0x00, 0x01, 0x02, 0x03,
+				0x04, 0x05, 0x06, 0x07,
+			},
+		},
+	}, header.AdditionalChunks)
+}
+
+func TestParseHeaderFromRIFFChunk_Corrupted(t *testing.T) {
+
+	// Corrupted format chunk
+	riffChunkData := &RIFFChunkData{
+		SubChunks: []Chunk{
+			{
+				ID:   FormatChunkID,
+				Size: 16,
+				Body: []byte{
+					0x01, 0x00, 0x02, 0x00,
+					0x44, 0xAC, 0x00, 0x00,
+				},
+			},
+		},
+	}
+	_, err := parseHeaderFromRIFFChunk(42, riffChunkData)
+	require.ErrorIs(t, err, ErrFmtChunkCorruptedPayload)
+
+	// Corrupted fact chunk
+	riffChunkData = &RIFFChunkData{
+		SubChunks: []Chunk{
+			{
+				ID:   FactChunkID,
+				Size: 4,
+				Body: []byte{0x80, 0x00},
+			},
+		},
+	}
+	_, err = parseHeaderFromRIFFChunk(42, riffChunkData)
+	require.ErrorIs(t, err, ErrFactChunkCorruptedPayload)
+
+	// Corrupted cue chunk
+	riffChunkData = &RIFFChunkData{
+		SubChunks: []Chunk{
+			{
+				ID:   CueChunkID,
+				Size: 28,
+				Body: []byte{
+					0x01, 0x00, 0x00, 0x00,
+				},
+			},
+		},
+	}
+	_, err = parseHeaderFromRIFFChunk(42, riffChunkData)
+	require.ErrorIs(t, err, ErrCueChunkCorruptedPayload)
+}
+
+func TestParseHeaderFromRIFFChunk_MissingFmt(t *testing.T) {
+	riffChunkData := &RIFFChunkData{
+		SubChunks: []Chunk{
+			{
+				ID:   DataChunkID,
+				Size: 8,
+				Body: []byte{
+					0x10, 0x11, 0x12, 0x13,
+					0x14, 0x15, 0x16, 0x17,
+				},
+			},
+		},
+	}
+	_, err := parseHeaderFromRIFFChunk(42, riffChunkData)
+	require.ErrorIs(t, err, ErrHeaderMissingFmtChunk)
+}
+
 func TestHeader_Validate_InvalidFormatCode(t *testing.T) {
 	formatData := getValidFormatChunkData()
 	formatData.FormatCode = FormatCode(99)
