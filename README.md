@@ -6,7 +6,7 @@
 
 # Audio I/O
 
-`audio-io` is a collection of I/O utilities written in pure Go that enable 
+`audio-io` is a library of I/O utilities written in pure Go that enable 
 developers to efficiently work with audio data. Key features include:
   * A `.wav` file writer that supports:
     - PCM `uint8`, `int16`, `int24`, and `int32` formats
@@ -15,6 +15,13 @@ developers to efficiently work with audio data. Key features include:
     - Arbitrary frame (or sample) rates
     - Memory-efficient streaming of audio data to disk (e.g. suitable for 
       real-time audio generation)
+  * A `.wav` file reader that supports:
+    - PCM `uint8`, `int16`, `int24`, and `int32` formats
+    - IEEE float `float32` and `float64` formats
+    - Arbitrary number of audio channels
+    - Arbitrary frame (or sample) rates
+    - Memory-efficient streaming of audio data from disk (e.g. suitable for
+      real-time audio streaming)
   * Quantizers/dequantizers
     - Suitable for conversions between the `uint8`, `int16`, `int24`, `int32`, 
       `float32`, and `float64` audio formats
@@ -75,7 +82,60 @@ Other optional writer properties can be set via functional arguments. In the
 example above, the channel count has been set, overriding the default value 
 of 1.
 
-### Working with multiple channels
+## Reading wave files
+The `wave.Reader` type can be used to extract audio samples from .wav files. It 
+wraps an existing `io.ReadSeeker` such as an `io.File` or a `bytes.Reader` and 
+makes all relevant metadata available to the caller using the `Header` method.
+(Note that `bytes.Reader` is part of the Go standard library).
+
+```Go
+package main
+
+import (
+	"os"
+	"github.com/jonchammer/audio-io/wave"
+)
+
+func main() {
+	// NOTE: This example ignores error handling for the sake of brevity.
+	
+	// Prepare a data source containing raw .wav data
+	file, _ := os.Open("example.wav")
+	defer func() {
+		_ = file.Close()
+	}()
+
+	// Create a Reader and get the header. The header gives us some useful 
+	// metadata, including the sample type, sample count, channel count, etc.
+	r := wave.NewReader(file)
+	header, _ := r.Header()
+
+	// In this example, we'll assume that we know ahead of time that
+	// 'example.wav' uses 16-bit integer samples. r.ReadInt16() would return an
+	// error if that assumption was incorrect. We'll also assume that the file
+	// is small enough that we can read all the samples into memory at once.
+	// Note that the API does also support streaming, though.
+	data := make([]int16, header.SampleCount())
+	_, _ = r.ReadInt16(data)
+	
+	// Do something with the audio samples in 'data'
+	// ...
+}
+```
+
+## Streaming
+The `wave.Writer` API was designed to easily support efficient streaming of
+data. Each call to `WriteXXX` **appends** data to the base `io.WriteSeeker`
+that was provided when the writer was created, meaning that those APIs can be
+called whenever a new buffer of samples is available. See the `stream-writer`
+example in the `examples` folder for more details.
+
+Similarly, the `wave.Reader` API also supports streaming. Each call to
+`ReadXXX` reads a block of samples from the base `io.ReadSeeker`, allowing the
+caller to tightly control how much memory the reader uses at runtime. See the
+`stream-reader` example in the `examples` folder for more details.
+
+## Working with multiple channels
 In this library, each audio **frame** consists of 1 or more **samples**, with 
 one sample per audio channel. A sample is represented as a single number with a
 Go type of `uint8`, `int16`, `int32`, `float32`, or `float64`. 
@@ -115,14 +175,7 @@ deinterleaving arbitrary slices (`InterleaveSlices` and `DeinterleaveSlices`).
 These may prove useful if your application uses the "2D array" approach to 
 block organization.
 
-### Streaming
-The `wave.Writer` API was designed to easily support efficient streaming of 
-data. Each call to `WriteXXX` **appends** data to the base `io.WriteSeeker` 
-that was provided when the writer was created, meaning that those APIs can be 
-called whenever a new buffer of samples is available. See the `stream-writer` 
-example in the `examples` folder for more details.
-
-### Quantization
+## Quantization
 The `core` package includes quantizers and dequantizers that allow for 
 conversions between audio sample types (e.g. `int32` and `float32`). PCM types,
 `uint8`, `int16`, `int24`, and `int32` are assumed to use the full range of 
