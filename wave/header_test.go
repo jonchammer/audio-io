@@ -3,6 +3,8 @@ package wave
 import (
 	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/jonchammer/audio-io/core"
 )
 
 func TestParseHeaderFromRIFFChunk_Normal(t *testing.T) {
@@ -63,7 +65,7 @@ func TestParseHeaderFromRIFFChunk_Normal(t *testing.T) {
 	require.Equal(t, uint32(42), totalFileSize)
 
 	// Check format section
-	expectedFmt := NewFormatChunkData(2, 44100, SampleTypeInt16)
+	expectedFmt := NewFormatChunkData(2, 44100, core.SampleTypeInt16)
 	require.Equal(t, expectedFmt, header.FormatData)
 
 	// Check fact section
@@ -237,7 +239,7 @@ func TestHeader_SampleType_Uint8(t *testing.T) {
 
 	sampleType, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeUint8, sampleType)
+	require.Equal(t, core.SampleTypeUint8, sampleType)
 }
 
 func TestHeader_SampleType_Int16(t *testing.T) {
@@ -248,7 +250,7 @@ func TestHeader_SampleType_Int16(t *testing.T) {
 
 	sampleType, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeInt16, sampleType)
+	require.Equal(t, core.SampleTypeInt16, sampleType)
 }
 
 func TestHeader_SampleType_Int24(t *testing.T) {
@@ -259,7 +261,7 @@ func TestHeader_SampleType_Int24(t *testing.T) {
 
 	sampleType, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeInt24, sampleType)
+	require.Equal(t, core.SampleTypeInt24, sampleType)
 }
 
 func TestHeader_SampleType_Int32(t *testing.T) {
@@ -270,7 +272,7 @@ func TestHeader_SampleType_Int32(t *testing.T) {
 
 	sampleType, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeInt32, sampleType)
+	require.Equal(t, core.SampleTypeInt32, sampleType)
 }
 
 func TestHeader_SampleType_Float32(t *testing.T) {
@@ -281,7 +283,7 @@ func TestHeader_SampleType_Float32(t *testing.T) {
 
 	sampleType, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeFloat32, sampleType)
+	require.Equal(t, core.SampleTypeFloat32, sampleType)
 }
 
 func TestHeader_SampleType_Float64(t *testing.T) {
@@ -292,7 +294,7 @@ func TestHeader_SampleType_Float64(t *testing.T) {
 
 	sampleType, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeFloat64, sampleType)
+	require.Equal(t, core.SampleTypeFloat64, sampleType)
 }
 
 func TestHeader_SampleType_InvalidFormatCode(t *testing.T) {

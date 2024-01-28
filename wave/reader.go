@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"math"
+
+	"github.com/jonchammer/audio-io/core"
 )
 
 var (
@@ -130,7 +132,7 @@ func (r *Reader) ReadUint8(data []uint8) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if sampleType != SampleTypeUint8 {
+	if sampleType != core.SampleTypeUint8 {
 		return 0, ErrReaderUnexpectedUint8
 	}
 
@@ -165,7 +167,7 @@ func (r *Reader) ReadInt16(data []int16) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if sampleType != SampleTypeInt16 {
+	if sampleType != core.SampleTypeInt16 {
 		return 0, ErrReaderUnexpectedInt16
 	}
 
@@ -206,7 +208,7 @@ func (r *Reader) ReadInt24(data []int32) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if sampleType != SampleTypeInt24 {
+	if sampleType != core.SampleTypeInt24 {
 		return 0, ErrReaderUnexpectedInt24
 	}
 
@@ -244,7 +246,7 @@ func (r *Reader) ReadInt32(data []int32) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if sampleType != SampleTypeInt32 {
+	if sampleType != core.SampleTypeInt32 {
 		return 0, ErrReaderUnexpectedInt32
 	}
 
@@ -283,7 +285,7 @@ func (r *Reader) ReadFloat32(data []float32) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if sampleType != SampleTypeFloat32 {
+	if sampleType != core.SampleTypeFloat32 {
 		return 0, ErrReaderUnexpectedFloat32
 	}
 
@@ -322,7 +324,7 @@ func (r *Reader) ReadFloat64(data []float64) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if sampleType != SampleTypeFloat64 {
+	if sampleType != core.SampleTypeFloat64 {
 		return 0, ErrReaderUnexpectedFloat64
 	}
 

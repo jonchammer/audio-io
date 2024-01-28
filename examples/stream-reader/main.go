@@ -119,7 +119,7 @@ func readNormalizedSamples(
 	}
 
 	switch sampleType {
-	case wave.SampleTypeUint8:
+	case core.SampleTypeUint8:
 		{
 			for {
 				data := make([]uint8, maxSamples)
@@ -133,7 +133,7 @@ func readNormalizedSamples(
 			}
 		}
 
-	case wave.SampleTypeInt16:
+	case core.SampleTypeInt16:
 		{
 			for {
 				data := make([]int16, maxSamples)
@@ -147,7 +147,7 @@ func readNormalizedSamples(
 			}
 		}
 
-	case wave.SampleTypeInt24:
+	case core.SampleTypeInt24:
 		{
 			for {
 				data := make([]int32, maxSamples)
@@ -161,7 +161,7 @@ func readNormalizedSamples(
 			}
 		}
 
-	case wave.SampleTypeInt32:
+	case core.SampleTypeInt32:
 		{
 			for {
 				data := make([]int32, maxSamples)
@@ -175,7 +175,7 @@ func readNormalizedSamples(
 			}
 		}
 
-	case wave.SampleTypeFloat32:
+	case core.SampleTypeFloat32:
 		{
 			for {
 				data := make([]float32, maxSamples)
@@ -189,7 +189,7 @@ func readNormalizedSamples(
 			}
 		}
 
-	case wave.SampleTypeFloat64:
+	case core.SampleTypeFloat64:
 		{
 			for {
 				data := make([]float64, maxSamples)

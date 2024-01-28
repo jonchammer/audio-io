@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"io"
 	"testing"
+
+	"github.com/jonchammer/audio-io/core"
 )
 
 // ------------------------------------------------------------------------- //
@@ -209,7 +211,7 @@ func TestReadRIFFChunk_MissingDataChunk(t *testing.T) {
 func TestNewFormatChunkData_Uint8(t *testing.T) {
 
 	// <= 2 channels, regular PCM
-	data := NewFormatChunkData(2, 44100, SampleTypeUint8)
+	data := NewFormatChunkData(2, 44100, core.SampleTypeUint8)
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodePCM,
 		ChannelCount:       2,
@@ -223,7 +225,7 @@ func TestNewFormatChunkData_Uint8(t *testing.T) {
 	}, data)
 
 	// > 2 channels, Extensible
-	data = NewFormatChunkData(4, 44100, SampleTypeUint8)
+	data = NewFormatChunkData(4, 44100, core.SampleTypeUint8)
 	validBitsPerSample := uint16(8)
 	channelMask := uint32(0)
 	subFormat := FormatCodePCM
@@ -243,7 +245,7 @@ func TestNewFormatChunkData_Uint8(t *testing.T) {
 func TestNewFormatChunkData_Int16(t *testing.T) {
 
 	// <= 2 channels, regular PCM
-	data := NewFormatChunkData(2, 44100, SampleTypeInt16)
+	data := NewFormatChunkData(2, 44100, core.SampleTypeInt16)
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodePCM,
 		ChannelCount:       2,
@@ -257,7 +259,7 @@ func TestNewFormatChunkData_Int16(t *testing.T) {
 	}, data)
 
 	// > 2 channels, Extensible
-	data = NewFormatChunkData(4, 44100, SampleTypeInt16)
+	data = NewFormatChunkData(4, 44100, core.SampleTypeInt16)
 	validBitsPerSample := uint16(16)
 	channelMask := uint32(0)
 	subFormat := FormatCodePCM
@@ -277,7 +279,7 @@ func TestNewFormatChunkData_Int16(t *testing.T) {
 func TestNewFormatChunkData_Int24(t *testing.T) {
 
 	// 24-bit int is always extensible
-	data := NewFormatChunkData(2, 44100, SampleTypeInt24)
+	data := NewFormatChunkData(2, 44100, core.SampleTypeInt24)
 	validBitsPerSample := uint16(24)
 	channelMask := uint32(0)
 	subFormat := FormatCodePCM
@@ -297,7 +299,7 @@ func TestNewFormatChunkData_Int24(t *testing.T) {
 func TestNewFormatChunkData_Int32(t *testing.T) {
 
 	// 32-bit int is always extensible
-	data := NewFormatChunkData(2, 44100, SampleTypeInt32)
+	data := NewFormatChunkData(2, 44100, core.SampleTypeInt32)
 	validBitsPerSample := uint16(32)
 	channelMask := uint32(0)
 	subFormat := FormatCodePCM
@@ -317,7 +319,7 @@ func TestNewFormatChunkData_Int32(t *testing.T) {
 func TestNewFormatChunkData_Float32(t *testing.T) {
 
 	// <= 2 channels, regular IEEE float
-	data := NewFormatChunkData(2, 44100, SampleTypeFloat32)
+	data := NewFormatChunkData(2, 44100, core.SampleTypeFloat32)
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeIEEEFloat,
 		ChannelCount:       2,
@@ -331,7 +333,7 @@ func TestNewFormatChunkData_Float32(t *testing.T) {
 	}, data)
 
 	// > 2 channels, Extensible
-	data = NewFormatChunkData(4, 44100, SampleTypeFloat32)
+	data = NewFormatChunkData(4, 44100, core.SampleTypeFloat32)
 	validBitsPerSample := uint16(32)
 	channelMask := uint32(0)
 	subFormat := FormatCodeIEEEFloat
@@ -351,7 +353,7 @@ func TestNewFormatChunkData_Float32(t *testing.T) {
 func TestNewFormatChunkData_Float64(t *testing.T) {
 
 	// <= 2 channels, regular IEEE float
-	data := NewFormatChunkData(2, 44100, SampleTypeFloat64)
+	data := NewFormatChunkData(2, 44100, core.SampleTypeFloat64)
 	require.Equal(t, FormatChunkData{
 		FormatCode:         FormatCodeIEEEFloat,
 		ChannelCount:       2,
@@ -365,7 +367,7 @@ func TestNewFormatChunkData_Float64(t *testing.T) {
 	}, data)
 
 	// > 2 channels, Extensible
-	data = NewFormatChunkData(4, 44100, SampleTypeFloat64)
+	data = NewFormatChunkData(4, 44100, core.SampleTypeFloat64)
 	validBitsPerSample := uint16(64)
 	channelMask := uint32(0)
 	subFormat := FormatCodeIEEEFloat
@@ -435,7 +437,7 @@ func TestFormatChunkData_ChunkSize(t *testing.T) {
 
 func TestFormatChunkData_Serialize_PCM(t *testing.T) {
 
-	data := NewFormatChunkData(2, 44100, SampleTypeUint8)
+	data := NewFormatChunkData(2, 44100, core.SampleTypeUint8)
 	result, err := data.Serialize()
 	require.NoError(t, err)
 
@@ -451,7 +453,7 @@ func TestFormatChunkData_Serialize_PCM(t *testing.T) {
 
 func TestFormatChunkData_Serialize_IEEEFloat(t *testing.T) {
 
-	data := NewFormatChunkData(2, 44100, SampleTypeFloat32)
+	data := NewFormatChunkData(2, 44100, core.SampleTypeFloat32)
 	result, err := data.Serialize()
 	require.NoError(t, err)
 
@@ -468,7 +470,7 @@ func TestFormatChunkData_Serialize_IEEEFloat(t *testing.T) {
 
 func TestFormatChunkData_Serialize_Extensible(t *testing.T) {
 
-	data := NewFormatChunkData(4, 44100, SampleTypeUint8)
+	data := NewFormatChunkData(4, 44100, core.SampleTypeUint8)
 	result, err := data.Serialize()
 	require.NoError(t, err)
 
@@ -495,19 +497,19 @@ func TestFormatChunkData_Serialize_Extensible(t *testing.T) {
 func TestFormatChunkData_Serialize_InvalidExtensible(t *testing.T) {
 
 	// Missing 'ValidBitsPerSample'
-	data := NewFormatChunkData(4, 44100, SampleTypeUint8)
+	data := NewFormatChunkData(4, 44100, core.SampleTypeUint8)
 	data.ValidBitsPerSample = nil
 	_, err := data.Serialize()
 	require.ErrorIs(t, err, ErrFmtChunkInvalidExtensible)
 
 	// Missing 'ChannelMask'
-	data = NewFormatChunkData(4, 44100, SampleTypeUint8)
+	data = NewFormatChunkData(4, 44100, core.SampleTypeUint8)
 	data.ChannelMask = nil
 	_, err = data.Serialize()
 	require.ErrorIs(t, err, ErrFmtChunkInvalidExtensible)
 
 	// Missing 'SubFormat'
-	data = NewFormatChunkData(4, 44100, SampleTypeUint8)
+	data = NewFormatChunkData(4, 44100, core.SampleTypeUint8)
 	data.SubFormat = nil
 	_, err = data.Serialize()
 	require.ErrorIs(t, err, ErrFmtChunkInvalidExtensible)

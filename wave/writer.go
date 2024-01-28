@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+
+	"github.com/jonchammer/audio-io/core"
 )
 
 var (
@@ -41,7 +43,7 @@ type Writer struct {
 	baseWriter io.WriteSeeker
 
 	// Determines what types of audio data this writer should accept at runtime
-	sampleType SampleType
+	sampleType core.SampleType
 
 	// Metadata chunks. Most of this information be calculated when the writer
 	// is created, but some fields cannot be determined until runtime. These
@@ -71,7 +73,7 @@ type Writer struct {
 // setting the number of channels).
 func NewWriter(
 	baseWriter io.WriteSeeker,
-	sampleType SampleType,
+	sampleType core.SampleType,
 	frameRate uint32,
 	opts ...WriterOption,
 ) (*Writer, error) {
@@ -120,7 +122,7 @@ func NewWriter(
 // WriteUint8 will fail if the SampleType of the Writer is not set to
 // SampleTypeUint8.
 func (w *Writer) WriteUint8(data []uint8) error {
-	if w.sampleType != SampleTypeUint8 {
+	if w.sampleType != core.SampleTypeUint8 {
 		return ErrWriterExpectedUint8
 	}
 
@@ -139,7 +141,7 @@ func (w *Writer) WriteUint8(data []uint8) error {
 // SampleTypeInt16.
 func (w *Writer) WriteInt16(data []int16) error {
 
-	if w.sampleType != SampleTypeInt16 {
+	if w.sampleType != core.SampleTypeInt16 {
 		return ErrWriterExpectedInt16
 	}
 
@@ -164,7 +166,7 @@ func (w *Writer) WriteInt16(data []int16) error {
 // values as 24-bit integers.
 func (w *Writer) WriteInt24(data []int32) error {
 
-	if w.sampleType != SampleTypeInt24 {
+	if w.sampleType != core.SampleTypeInt24 {
 		return ErrWriterExpectedInt24
 	}
 
@@ -185,7 +187,7 @@ func (w *Writer) WriteInt24(data []int32) error {
 // SampleTypeInt32.
 func (w *Writer) WriteInt32(data []int32) error {
 
-	if w.sampleType != SampleTypeInt32 {
+	if w.sampleType != core.SampleTypeInt32 {
 		return ErrWriterExpectedInt32
 	}
 
@@ -204,7 +206,7 @@ func (w *Writer) WriteInt32(data []int32) error {
 // SampleTypeFloat32.
 func (w *Writer) WriteFloat32(data []float32) error {
 
-	if w.sampleType != SampleTypeFloat32 {
+	if w.sampleType != core.SampleTypeFloat32 {
 		return ErrWriterExpectedFloat32
 	}
 
@@ -223,7 +225,7 @@ func (w *Writer) WriteFloat32(data []float32) error {
 // SampleTypeFloat64.
 func (w *Writer) WriteFloat64(data []float64) error {
 
-	if w.sampleType != SampleTypeFloat64 {
+	if w.sampleType != core.SampleTypeFloat64 {
 		return ErrWriterExpectedFloat64
 	}
 

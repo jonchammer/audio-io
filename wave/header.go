@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/jonchammer/audio-io/core"
 )
 
 var (
@@ -159,38 +161,38 @@ func (h *Header) Validate() error {
 
 // SampleType returns the SampleType that should be used when reading data
 // associated with this Header.
-func (h *Header) SampleType() (SampleType, error) {
+func (h *Header) SampleType() (core.SampleType, error) {
 	fc, err := h.FormatData.EffectiveFormatCode()
 	if err != nil {
-		return SampleType(-1), err
+		return core.SampleType(-1), err
 	}
 	if !fc.IsValid() {
-		return SampleType(-1), fmt.Errorf("invalid format code: '%s'", fc)
+		return core.SampleType(-1), fmt.Errorf("invalid format code: '%s'", fc)
 	}
 
 	if fc == FormatCodePCM {
 		switch h.FormatData.BitsPerSample {
 		case 8:
-			return SampleTypeUint8, nil
+			return core.SampleTypeUint8, nil
 		case 16:
-			return SampleTypeInt16, nil
+			return core.SampleTypeInt16, nil
 		case 24:
-			return SampleTypeInt24, nil
+			return core.SampleTypeInt24, nil
 		case 32:
-			return SampleTypeInt32, nil
+			return core.SampleTypeInt32, nil
 		default:
-			return SampleType(-1), fmt.Errorf("unknown PCM type: '%d' bits per sample", h.FormatData.BitsPerSample)
+			return core.SampleType(-1), fmt.Errorf("unknown PCM type: '%d' bits per sample", h.FormatData.BitsPerSample)
 		}
 	}
 
 	// IEEE float
 	switch h.FormatData.BitsPerSample {
 	case 32:
-		return SampleTypeFloat32, nil
+		return core.SampleTypeFloat32, nil
 	case 64:
-		return SampleTypeFloat64, nil
+		return core.SampleTypeFloat64, nil
 	default:
-		return SampleType(-1), fmt.Errorf("unknown IEEE float type: '%d' bits per sample", h.FormatData.BitsPerSample)
+		return core.SampleType(-1), fmt.Errorf("unknown IEEE float type: '%d' bits per sample", h.FormatData.BitsPerSample)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jonchammer/audio-io/bytes"
+	"github.com/jonchammer/audio-io/core"
 )
 
 // ------------------------------------------------------------------------- //
@@ -14,13 +15,13 @@ import (
 func TestNewWriter_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeUint8, 44100,
+		baseWriter, core.SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
 	// Verify that 'w' was initialized correctly
 	require.Equal(t, baseWriter, w.baseWriter)
-	require.Equal(t, SampleTypeUint8, w.sampleType)
+	require.Equal(t, core.SampleTypeUint8, w.sampleType)
 	require.Equal(t, uint32(44100), w.formatChunkData.FrameRate)
 	require.Equal(t, uint16(1), w.formatChunkData.ChannelCount)
 	require.Nil(t, w.factChunkData)
@@ -30,13 +31,13 @@ func TestNewWriter_Normal(t *testing.T) {
 func TestNewWriter_WithFactChunk(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat32, 44100,
+		baseWriter, core.SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
 	// Verify that 'w' was initialized correctly
 	require.Equal(t, baseWriter, w.baseWriter)
-	require.Equal(t, SampleTypeFloat32, w.sampleType)
+	require.Equal(t, core.SampleTypeFloat32, w.sampleType)
 	require.Equal(t, uint32(44100), w.formatChunkData.FrameRate)
 	require.Equal(t, uint16(1), w.formatChunkData.ChannelCount)
 	require.NotNil(t, w.factChunkData)
@@ -50,7 +51,7 @@ func TestNewWriter_Errors(t *testing.T) {
 
 	// Invalid option (e.g. bad sample type)
 	_, err := NewWriter(
-		baseWriter, SampleType(-1), 44100,
+		baseWriter, core.SampleType(-1), 44100,
 	)
 	require.ErrorIs(t, err, ErrWriterInvalidSampleType)
 }
@@ -62,7 +63,7 @@ func TestNewWriter_Errors(t *testing.T) {
 func TestWriter_Flush_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat32, 44100,
+		baseWriter, core.SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -77,7 +78,7 @@ func TestWriter_Flush_Normal(t *testing.T) {
 func TestWriter_Flush_NoData(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeUint8, 44100,
+		baseWriter, core.SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
@@ -89,7 +90,7 @@ func TestWriter_Flush_NoData(t *testing.T) {
 func TestWriter_Flush_WithPadding(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeUint8, 44100,
+		baseWriter, core.SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
@@ -104,7 +105,7 @@ func TestWriter_Flush_WithPadding(t *testing.T) {
 func TestWriter_Flush_InvalidByteCount(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeUint8, 44100,
+		baseWriter, core.SampleTypeUint8, 44100,
 		WithChannelCount(2),
 	)
 	require.NoError(t, err)
@@ -124,7 +125,7 @@ func TestWriter_Flush_InvalidByteCount(t *testing.T) {
 func TestWriter_WriteUint8_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeUint8, 44100,
+		baseWriter, core.SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
@@ -136,7 +137,7 @@ func TestWriter_WriteUint8_Normal(t *testing.T) {
 func TestWriter_WriteUint8_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat32, 44100,
+		baseWriter, core.SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -151,7 +152,7 @@ func TestWriter_WriteUint8_InvalidSampleType(t *testing.T) {
 func TestWriter_WriteInt16_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeInt16, 44100,
+		baseWriter, core.SampleTypeInt16, 44100,
 	)
 	require.NoError(t, err)
 
@@ -163,7 +164,7 @@ func TestWriter_WriteInt16_Normal(t *testing.T) {
 func TestWriter_WriteInt16_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat32, 44100,
+		baseWriter, core.SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -178,7 +179,7 @@ func TestWriter_WriteInt16_InvalidSampleType(t *testing.T) {
 func TestWriter_WriteInt24_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeInt24, 44100,
+		baseWriter, core.SampleTypeInt24, 44100,
 	)
 	require.NoError(t, err)
 
@@ -190,7 +191,7 @@ func TestWriter_WriteInt24_Normal(t *testing.T) {
 func TestWriter_WriteInt24_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat32, 44100,
+		baseWriter, core.SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -205,7 +206,7 @@ func TestWriter_WriteInt24_InvalidSampleType(t *testing.T) {
 func TestWriter_WriteInt32_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeInt32, 44100,
+		baseWriter, core.SampleTypeInt32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -217,7 +218,7 @@ func TestWriter_WriteInt32_Normal(t *testing.T) {
 func TestWriter_WriteInt32_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat32, 44100,
+		baseWriter, core.SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -232,7 +233,7 @@ func TestWriter_WriteInt32_InvalidSampleType(t *testing.T) {
 func TestWriter_WriteFloat32_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat32, 44100,
+		baseWriter, core.SampleTypeFloat32, 44100,
 	)
 	require.NoError(t, err)
 
@@ -244,7 +245,7 @@ func TestWriter_WriteFloat32_Normal(t *testing.T) {
 func TestWriter_WriteFloat32_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeUint8, 44100,
+		baseWriter, core.SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
@@ -259,7 +260,7 @@ func TestWriter_WriteFloat32_InvalidSampleType(t *testing.T) {
 func TestWriter_WriteFloat64_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat64, 44100,
+		baseWriter, core.SampleTypeFloat64, 44100,
 	)
 	require.NoError(t, err)
 
@@ -271,7 +272,7 @@ func TestWriter_WriteFloat64_Normal(t *testing.T) {
 func TestWriter_WriteFloat64_InvalidSampleType(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeUint8, 44100,
+		baseWriter, core.SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 

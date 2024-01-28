@@ -1,3 +1,3 @@
-// Package core contains types and functions common to the rest of the library,
+// Package core contains types and decoderFuncs common to the rest of the library,
 // including quantizers and interleavers.
 package core

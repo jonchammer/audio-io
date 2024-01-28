@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jonchammer/audio-io/bytes"
+	"github.com/jonchammer/audio-io/core"
 )
 
 // ------------------------------------------------------------------------- //
@@ -25,7 +26,7 @@ func TestE2E_Empty(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeUint8, 44100, WithChannelCount(2),
+		baseWriter, core.SampleTypeUint8, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -84,7 +85,7 @@ func TestE2E_Empty(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeUint8, st)
+	require.Equal(t, core.SampleTypeUint8, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(88200), header.ByteRate())
 	require.Equal(t, uint64(88200*8), header.BitRate())
@@ -108,7 +109,7 @@ func TestE2E_Uint8_Normal(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeUint8, 44100, WithChannelCount(2),
+		baseWriter, core.SampleTypeUint8, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -170,7 +171,7 @@ func TestE2E_Uint8_Normal(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeUint8, st)
+	require.Equal(t, core.SampleTypeUint8, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(88200), header.ByteRate())
 	require.Equal(t, uint64(88200*8), header.BitRate())
@@ -192,7 +193,7 @@ func TestE2E_Uint8_Padding(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeUint8, 44100,
+		baseWriter, core.SampleTypeUint8, 44100,
 	)
 	require.NoError(t, err)
 
@@ -255,7 +256,7 @@ func TestE2E_Uint8_Padding(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeUint8, st)
+	require.Equal(t, core.SampleTypeUint8, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(44100), header.ByteRate())
 	require.Equal(t, uint64(44100*8), header.BitRate())
@@ -276,7 +277,7 @@ func TestE2E_Uint8_Padding(t *testing.T) {
 func TestE2E_Uint8_Extensible(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeUint8, 44100, WithChannelCount(4),
+		baseWriter, core.SampleTypeUint8, 44100, WithChannelCount(4),
 	)
 	require.NoError(t, err)
 
@@ -356,7 +357,7 @@ func TestE2E_Uint8_Extensible(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeUint8, st)
+	require.Equal(t, core.SampleTypeUint8, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(176400), header.ByteRate())
 	require.Equal(t, uint64(176400*8), header.BitRate())
@@ -385,7 +386,7 @@ func TestE2E_Uint8_Extensible(t *testing.T) {
 func TestE2E_Int16_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeInt16, 44100, WithChannelCount(2),
+		baseWriter, core.SampleTypeInt16, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -447,7 +448,7 @@ func TestE2E_Int16_Normal(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeInt16, st)
+	require.Equal(t, core.SampleTypeInt16, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(176400), header.ByteRate())
 	require.Equal(t, uint64(176400*8), header.BitRate())
@@ -468,7 +469,7 @@ func TestE2E_Int16_Normal(t *testing.T) {
 func TestE2E_Int16_Extensible(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeInt16, 44100, WithChannelCount(4),
+		baseWriter, core.SampleTypeInt16, 44100, WithChannelCount(4),
 	)
 	require.NoError(t, err)
 
@@ -555,7 +556,7 @@ func TestE2E_Int16_Extensible(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeInt16, st)
+	require.Equal(t, core.SampleTypeInt16, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(352800), header.ByteRate())
 	require.Equal(t, uint64(352800*8), header.BitRate())
@@ -585,7 +586,7 @@ func TestE2E_Int24_Normal(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeInt24, 44100, WithChannelCount(2),
+		baseWriter, core.SampleTypeInt24, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -671,7 +672,7 @@ func TestE2E_Int24_Normal(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeInt24, st)
+	require.Equal(t, core.SampleTypeInt24, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(264600), header.ByteRate())
 	require.Equal(t, uint64(264600*8), header.BitRate())
@@ -697,7 +698,7 @@ func TestE2E_Int24_Padding(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeInt24, 44100,
+		baseWriter, core.SampleTypeInt24, 44100,
 	)
 	require.NoError(t, err)
 
@@ -780,7 +781,7 @@ func TestE2E_Int24_Padding(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeInt24, st)
+	require.Equal(t, core.SampleTypeInt24, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(132300), header.ByteRate())
 	require.Equal(t, uint64(132300*8), header.BitRate())
@@ -809,7 +810,7 @@ func TestE2E_Int24_Padding(t *testing.T) {
 func TestE2E_Int32_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeInt32, 44100, WithChannelCount(2),
+		baseWriter, core.SampleTypeInt32, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -896,7 +897,7 @@ func TestE2E_Int32_Normal(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeInt32, st)
+	require.Equal(t, core.SampleTypeInt32, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(352800), header.ByteRate())
 	require.Equal(t, uint64(352800*8), header.BitRate())
@@ -925,7 +926,7 @@ func TestE2E_Int32_Normal(t *testing.T) {
 func TestE2E_Float32_Normal(t *testing.T) {
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat32, 44100, WithChannelCount(2),
+		baseWriter, core.SampleTypeFloat32, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -996,7 +997,7 @@ func TestE2E_Float32_Normal(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeFloat32, st)
+	require.Equal(t, core.SampleTypeFloat32, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(352800), header.ByteRate())
 	require.Equal(t, uint64(352800*8), header.BitRate())
@@ -1018,7 +1019,7 @@ func TestE2E_Float32_Extensible(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat32, 44100, WithChannelCount(4),
+		baseWriter, core.SampleTypeFloat32, 44100, WithChannelCount(4),
 	)
 	require.NoError(t, err)
 
@@ -1105,7 +1106,7 @@ func TestE2E_Float32_Extensible(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeFloat32, st)
+	require.Equal(t, core.SampleTypeFloat32, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(705600), header.ByteRate())
 	require.Equal(t, uint64(705600*8), header.BitRate())
@@ -1135,7 +1136,7 @@ func TestE2E_Float64_Normal(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat64, 44100, WithChannelCount(2),
+		baseWriter, core.SampleTypeFloat64, 44100, WithChannelCount(2),
 	)
 	require.NoError(t, err)
 
@@ -1206,7 +1207,7 @@ func TestE2E_Float64_Normal(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeFloat64, st)
+	require.Equal(t, core.SampleTypeFloat64, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(705600), header.ByteRate())
 	require.Equal(t, uint64(705600*8), header.BitRate())
@@ -1228,7 +1229,7 @@ func TestE2E_Float64_Extensible(t *testing.T) {
 
 	baseWriter := &bytes.Writer{}
 	w, err := NewWriter(
-		baseWriter, SampleTypeFloat64, 44100, WithChannelCount(4),
+		baseWriter, core.SampleTypeFloat64, 44100, WithChannelCount(4),
 	)
 	require.NoError(t, err)
 
@@ -1315,7 +1316,7 @@ func TestE2E_Float64_Extensible(t *testing.T) {
 	require.NoError(t, header.Validate())
 	st, err := header.SampleType()
 	require.NoError(t, err)
-	require.Equal(t, SampleTypeFloat64, st)
+	require.Equal(t, core.SampleTypeFloat64, st)
 	require.Equal(t, uint32(44100), header.FrameRate())
 	require.Equal(t, uint32(1411200), header.ByteRate())
 	require.Equal(t, uint64(1411200*8), header.BitRate())

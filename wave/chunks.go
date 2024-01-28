@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+
+	"github.com/jonchammer/audio-io/core"
 )
 
 // ------------------------------------------------------------------------- //
@@ -305,11 +307,11 @@ type FormatChunkData struct {
 func NewFormatChunkData(
 	channelCount uint16,
 	frameRate uint32,
-	sampleType SampleType,
+	sampleType core.SampleType,
 ) FormatChunkData {
 
 	// Consolidate the required information from the sample type
-	effectiveFormatCode := sampleType.EffectiveFormatCode()
+	efc := effectiveFormatCode(sampleType)
 	sampleSizeBytes := sampleType.Size()
 
 	// Calculate some common values needed for the format chunk
@@ -319,11 +321,11 @@ func NewFormatChunkData(
 
 	// We'll use the extensible format when it applies
 	isExtensible := channelCount > 2 ||
-		sampleType == SampleTypeInt24 ||
-		sampleType == SampleTypeInt32
+		sampleType == core.SampleTypeInt24 ||
+		sampleType == core.SampleTypeInt32
 
 	// Set the extension fields (as appropriate)
-	formatCode := effectiveFormatCode
+	formatCode := efc
 	var validBitsPerSample *uint16
 	var channelMask *uint32
 	var subFormat *FormatCode
@@ -331,7 +333,7 @@ func NewFormatChunkData(
 		formatCode = FormatCodeExtensible
 		validBitsPerSample = &bitsPerSample
 		channelMask = new(uint32)
-		subFormat = &effectiveFormatCode
+		subFormat = &efc
 	}
 
 	return FormatChunkData{

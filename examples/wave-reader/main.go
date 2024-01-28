@@ -136,7 +136,7 @@ func readNormalizedAudioData(r *wave.Reader) ([]float64, error) {
 	var dequantizedAudioSamples []float64
 
 	switch sampleType {
-	case wave.SampleTypeUint8:
+	case core.SampleTypeUint8:
 		{
 			data := make([]uint8, header.SampleCount())
 			_, err = r.ReadUint8(data)
@@ -146,7 +146,7 @@ func readNormalizedAudioData(r *wave.Reader) ([]float64, error) {
 			dequantizedAudioSamples = core.DequantizeUint8(data)
 		}
 
-	case wave.SampleTypeInt16:
+	case core.SampleTypeInt16:
 		{
 			data := make([]int16, header.SampleCount())
 			_, err = r.ReadInt16(data)
@@ -156,7 +156,7 @@ func readNormalizedAudioData(r *wave.Reader) ([]float64, error) {
 			dequantizedAudioSamples = core.DequantizeInt16(data)
 		}
 
-	case wave.SampleTypeInt24:
+	case core.SampleTypeInt24:
 		{
 			data := make([]int32, header.SampleCount())
 			_, err = r.ReadInt24(data)
@@ -166,7 +166,7 @@ func readNormalizedAudioData(r *wave.Reader) ([]float64, error) {
 			dequantizedAudioSamples = core.DequantizeInt24(data)
 		}
 
-	case wave.SampleTypeInt32:
+	case core.SampleTypeInt32:
 		{
 			data := make([]int32, header.SampleCount())
 			_, err = r.ReadInt32(data)
@@ -176,7 +176,7 @@ func readNormalizedAudioData(r *wave.Reader) ([]float64, error) {
 			dequantizedAudioSamples = core.DequantizeInt32(data)
 		}
 
-	case wave.SampleTypeFloat32:
+	case core.SampleTypeFloat32:
 		{
 			data := make([]float32, header.SampleCount())
 			_, err = r.ReadFloat32(data)
@@ -186,7 +186,7 @@ func readNormalizedAudioData(r *wave.Reader) ([]float64, error) {
 			dequantizedAudioSamples = core.DequantizeFloat32(data)
 		}
 
-	case wave.SampleTypeFloat64:
+	case core.SampleTypeFloat64:
 		{
 			dequantizedAudioSamples = make([]float64, header.SampleCount())
 			_, err = r.ReadFloat64(dequantizedAudioSamples)

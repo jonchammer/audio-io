@@ -41,7 +41,7 @@ func main() {
 	// example, we'll write our resulting .wav file to 'f' using 24-bit PCM
 	// data.
 	w, err := wave.NewWriter(
-		f, wave.SampleTypeInt24, uint32(sampleRate),
+		f, core.SampleTypeInt24, uint32(sampleRate),
 	)
 	if err != nil {
 		failF(err)

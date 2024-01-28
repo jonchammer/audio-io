@@ -41,7 +41,7 @@ func main() {
 	}()
 
 	// 3. Save the audio data as a wave file
-	err = saveAsWave(samples, f, wave.SampleTypeInt24, sampleRate)
+	err = saveAsWave(samples, f, core.SampleTypeInt24, sampleRate)
 	if err != nil {
 		failF(err)
 	}
@@ -68,7 +68,7 @@ func generateSineWave(
 func saveAsWave(
 	data []float64,
 	out io.WriteSeeker,
-	format wave.SampleType,
+	format core.SampleType,
 	sampleRate int,
 ) error {
 
@@ -80,15 +80,15 @@ func saveAsWave(
 
 	// Quantize the audio data and write it to our wave writer
 	switch format {
-	case wave.SampleTypeUint8:
+	case core.SampleTypeUint8:
 		err = w.WriteUint8(core.QuantizeToUint8(data))
-	case wave.SampleTypeInt16:
+	case core.SampleTypeInt16:
 		err = w.WriteInt16(core.QuantizeToInt16(data))
-	case wave.SampleTypeInt24:
+	case core.SampleTypeInt24:
 		err = w.WriteInt24(core.QuantizeToInt24(data))
-	case wave.SampleTypeInt32:
+	case core.SampleTypeInt32:
 		err = w.WriteInt32(core.QuantizeToInt32(data))
-	case wave.SampleTypeFloat32:
+	case core.SampleTypeFloat32:
 		err = w.WriteFloat32(core.QuantizeToFloat32(data))
 	default:
 		err = w.WriteFloat64(data)
