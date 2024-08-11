@@ -24,11 +24,15 @@ var (
 // single buffer (useful for small files), or to read blocks of samples (useful
 // for streaming).
 //
-// The Reader type generally enforces type safety when working with audio
+// The Reader type generally encourages type safety when working with audio
 // samples. If a .wav file was originally created using 16-bit integer samples,
-// that audio data can only be safely read using the ReadInt16 method.
-// Similarly, if the file was created using 32-bit IEEE float samples, that
-// audio data can only be safely read using the ReadFloat32 method.
+// that audio data can be safely read using the ReadInt16 method. Similarly, if
+// the file was created using 32-bit IEEE float samples, that audio data can
+// be safely read using the ReadFloat32 method.
+//
+// However, Reader does expose raw access to the underlying data stream via the
+// Read method, which can allow for more efficient data transformations if the
+// situation requires it.
 //
 // Reader.Header returns a Header struct that contains useful metadata about
 // the file, including what type should be used when reading samples, the total
@@ -104,6 +108,29 @@ func (r *Reader) Header() (*Header, error) {
 	}
 
 	return r.header, nil
+}
+
+// Read allows this Reader to be used as an io.Reader by accessing the audio
+// data directly. Type checking is not enforced, so the caller is entirely
+// responsible for ensuring that the bytes that are read are interpreted
+// correctly. For example, multibyte samples are returned in little-endian
+// order with interlaced channels (as required by the .wav specification).
+// See Header for more information about the stream's metadata.
+//
+// Read returns the number of bytes read and an error. See io.Reader for more
+// information about the standard contract.
+func (r *Reader) Read(data []byte) (int, error) {
+
+	// Make sure we've read the header already
+	_, err := r.Header()
+	if err != nil {
+		return 0, err
+	}
+
+	// This Reader implementation doesn't support compression, so we can read
+	// directly from the data reader with no additional buffering or
+	// processing.
+	return r.dataReader.Read(data)
 }
 
 // ReadUint8 reads a chunk of uint8 samples from the data source and places

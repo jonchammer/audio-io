@@ -3,6 +3,7 @@ package wave
 import (
 	"bytes"
 	"github.com/stretchr/testify/require"
+	"io"
 	"testing"
 )
 
@@ -31,6 +32,48 @@ func TestReader_Header_InvalidHeader(t *testing.T) {
 	r = NewReader(bytes.NewReader(payload))
 	_, err = r.Header()
 	require.ErrorIs(t, err, ErrHeaderMissingFmtChunk)
+}
+
+// ------------------------------------------------------------------------- //
+// Read()
+// ------------------------------------------------------------------------- //
+
+func TestReader_Read_Normal(t *testing.T) {
+	payload := []byte{
+		'R', 'I', 'F', 'F',
+		42, 0x00, 0x00, 0x00, // 36 bytes of metadata + 6 bytes of audio data
+		'W', 'A', 'V', 'E',
+		'f', 'm', 't', ' ',
+		0x10, 0x00, 0x00, 0x00, // Chunk Size
+		0x01, 0x00, // PCM data
+		0x01, 0x00, // 1 channel
+		0x44, 0xAC, 0x00, 0x00, // 44,100 samples/sec
+		0x44, 0xAC, 0x00, 0x00, // 44,100 bytes/sec
+		0x01, 0x00, // 1 byte / frame
+		0x08, 0x00, // 8 Bits per sample,
+		'd', 'a', 't', 'a',
+		0x06, 0x00, 0x00, 0x00, // 6 bytes of audio data
+		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, // Audio data
+	}
+	r := NewReader(bytes.NewReader(payload))
+
+	// Read the 6 bytes of data in multiple calls (better simulating a real
+	// scenario)
+	data := make([]byte, 4)
+	n, err := r.Read(data)
+	require.NoError(t, err)
+	require.Equal(t, 4, n)
+	require.Equal(t, []byte{0x01, 0x02, 0x03, 0x04}, data)
+
+	n, err = r.Read(data)
+	require.NoError(t, err)
+	require.Equal(t, 2, n)
+	require.Equal(t, []byte{0x05, 0x06}, data[:n])
+
+	// The next call to Read should fail
+	n, err = r.Read(data)
+	require.ErrorIs(t, err, io.EOF)
+	require.Equal(t, 0, n)
 }
 
 // ------------------------------------------------------------------------- //
