@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/ebitengine/oto/v3"
+	"io"
 	"os"
 	"time"
 
@@ -34,7 +36,7 @@ func main() {
 
 	// Create a decoder that will translate samples in real time from their
 	// native format to Int16 so oto can understand them.
-	decoder := core.NewDecoder(reader, sampleType, core.SampleTypeInt16)
+	decoder := core.NewInt16Decoder(reader, sampleType)
 
 	// Set up the player
 	otoCtx, readyChan, err := oto.NewContext(
@@ -57,7 +59,7 @@ func main() {
 	}
 
 	err = player.Close()
-	if err != nil {
+	if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
 		failF(err)
 	}
 }
