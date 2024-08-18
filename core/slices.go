@@ -12,7 +12,7 @@ import (
 // the native byte ordering of their host machine. This implementation makes
 // no attempt to correct for discrepancies between the two. Incorrect
 // assumptions about byte ordering may result in functional discrepancies.
-func AliasAs[T uint8 | int16 | int32 | int64 | float32 | float64](
+func AliasAs[T uint8 | int16 | Int24 | int32 | int64 | float32 | float64](
 	src []byte,
 ) []T {
 

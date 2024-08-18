@@ -36,7 +36,10 @@ func main() {
 
 	// Create a decoder that will translate samples in real time from their
 	// native format to Int16 so oto can understand them.
-	decoder := core.NewInt16Decoder(reader, sampleType)
+	decoder, err := core.NewSampleTypeConverter(reader, sampleType, core.SampleTypeInt16)
+	if err != nil {
+		failF(err)
+	}
 
 	// Set up the player
 	otoCtx, readyChan, err := oto.NewContext(
