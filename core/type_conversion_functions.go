@@ -13,24 +13,35 @@ func ConvertUint8ToUint8(out []uint8, in []uint8) {
 }
 
 func ConvertInt16ToUint8(out []uint8, in []int16) {
-	// panic("int16 -> uint8 not implemented")
+
+	// NOTE: Extract the most-significant byte of each sample and add 128
+	//
+	// -32768,   0, 32767 -> 0x8000, 0x0000, 0x7FFF
+	//   -128,   0,   128 -> 0xFF80, 0x0000, 0x007F
+	//      0, 128,   255  > 0x0000, 0x007F, 0x00FF
+
+	for i := 0; i < len(in); i++ {
+		out[i] = uint8(((in[i] >> 8) & 0xFF) + 128)
+	}
 }
 
 func ConvertInt24ToUint8(out []uint8, in []Int24) {
 
-	// TODO: Revisit this. The implementation can probably be improved.
+	// NOTE: Extract the most-significant byte (Int24[2] in little-endian
+	// notation) and add 128
 
 	for i := 0; i < len(in); i++ {
-		x := in[i].AsInt32()
-		sign := (x & MinInt24) >> 23
-		divisor := float64(MaxInt24) - float64(sign)
-		x2 := float64(x) / divisor
-		out[i] = uint8((x2 * 127.5) + 128.0)
+		out[i] = in[i][2] + 128
 	}
 }
 
 func ConvertInt32ToUint8(out []uint8, in []int32) {
-	// panic("int32 -> uint8 not implemented")
+
+	// NOTE: Extract the most-significant byte and add 128
+
+	for i := 0; i < len(in); i++ {
+		out[i] = uint8(((in[i] >> 24) & 0xFF) + 128)
+	}
 }
 
 func ConvertFloat32ToUint8(out []uint8, in []float32) {
@@ -58,15 +69,18 @@ func ConvertFloat64ToUint8(out []uint8, in []float64) {
 // ------------------------------------------------------------------------- //
 
 func ConvertUint8ToInt16(out []int16, in []uint8) {
-	// TODO: Revisit this. The implementation can probably be improved.
 
-	m := [2]float64{255.0 / 32512.0, 1.0 / 127.0}
-	b := [2]float64{-1.0, -128.0 / 127}
+	// y = (   256 * x ) / 1   {x  < 0}
+	// y = ( 25801 * x ) / 100 {x >= 0}
 
-	for i := range in {
-		idx := (in[i] & 0x80) >> 7
-		dequantized := m[idx]*float64(in[i]) + b[idx]
-		out[i] = int16((dequantized * 32767.5) - 0.5)
+	// Model parameters - slope and divisor
+	m := [2]int32{25801, 256}
+	d := [2]int32{100, 1}
+
+	for i := 0; i < len(in); i++ {
+		normalized := int32(in[i]) - 128
+		idx := (int32(normalized) & 0x80) >> 7
+		out[i] = int16((normalized * m[idx]) / d[idx])
 	}
 }
 
@@ -75,27 +89,14 @@ func ConvertInt16ToInt16(out []int16, in []int16) {
 }
 
 func ConvertInt24ToInt16(out []int16, in []Int24) {
-
-	// TODO: Revisit this. The implementation can probably be improved.
-
 	for i := range in {
-		x := in[i].AsInt32()
-		sign := (x & MinInt24) >> 23
-		divisor := float64(MaxInt24) - float64(sign)
-		dequantized := float64(x) / divisor
-		out[i] = int16((dequantized * 32767.5) - 0.5)
+		out[i] = int16(in[i].AsInt32() / 256)
 	}
 }
 
 func ConvertInt32ToInt16(out []int16, in []int32) {
-
-	// TODO: Revisit this. The implementation can probably be improved.
-
 	for i := range in {
-		sign := (in[i] & math.MinInt32) >> 31
-		divisor := float64(math.MaxInt32) - float64(sign)
-		dequantized := float64(in[i]) / divisor
-		out[i] = int16((dequantized * 32767.5) - 0.5)
+		out[i] = int16(in[i] / 65536)
 	}
 }
 
@@ -132,11 +133,44 @@ func ConvertFloat64ToInt16(out []int16, in []float64) {
 // ------------------------------------------------------------------------- //
 
 func ConvertUint8ToInt24(out []Int24, in []uint8) {
-	// panic("uint8 -> int24 not implemented")
+
+	// We'll first normalize the input samples by subtracting 128. That will
+	// get us values in the range [-128, 127].
+	//        0, 128,     255  > 0x0000 0000, 0x0000 007F, 0x0000 00FF
+	//     -128,   0,     127  > 0xFFFF FF80, 0x0000 0000, 0x0000 007F
+	// -8388608,   0, 8388607  > 0xFF80 0000, 0x0000 0000, 0x007F FFFF
+	//
+	// We'll use two different conversion functions - one for the negative part
+	// of the domain and one for the positive part.
+	//   Negative: y = ( 65536 * x ) / 1
+	//   Positive: y = ( 6605203 * x ) / 100
+	//
+	// We'll switch between the two equations based on the sign bit of the
+	// normalized input value.
+
+	// Model parameters - slope and divisor
+	m := [2]int32{6605203, 65536}
+	d := [2]int32{100, 1}
+
+	for i := 0; i < len(in); i++ {
+		normalized := int32(in[i]) - 128
+		idx := (normalized & 0x80) >> 7
+		out[i] = Int24FromInt32((normalized * m[idx]) / d[idx])
+	}
 }
 
 func ConvertInt16ToInt24(out []Int24, in []int16) {
-	// panic("int16 -> int24 not implemented")
+	// y = (     256 * x ) / 1     {x  < 0}
+	// y = ( 2560078 * x ) / 10000 {x >= 0}
+
+	// Model parameters - slope and divisor
+	m := [2]int64{2560078, 256}
+	d := [2]int64{10000, 1}
+
+	for i := 0; i < len(in); i++ {
+		idx := (int64(in[i]) & 0x8000) >> 15
+		out[i] = Int24FromInt64((int64(in[i]) * m[idx]) / d[idx])
+	}
 }
 
 func ConvertInt24ToInt24(out []Int24, in []Int24) {
@@ -144,7 +178,9 @@ func ConvertInt24ToInt24(out []Int24, in []Int24) {
 }
 
 func ConvertInt32ToInt24(out []Int24, in []int32) {
-	// panic("int32 -> int24 not implemented")
+	for i := 0; i < len(in); i++ {
+		out[i] = Int24FromInt32(in[i] / 256)
+	}
 }
 
 func ConvertFloat32ToInt24(out []Int24, in []float32) {
@@ -180,15 +216,64 @@ func ConvertFloat64ToInt24(out []Int24, in []float64) {
 // ------------------------------------------------------------------------- //
 
 func ConvertUint8ToInt32(out []int32, in []uint8) {
-	// panic("uint8 -> int32 not implemented")
+
+	//        -128 > 0xFFFF FFFF FFFF FF80
+	//           0 > 0x0000 0000 0000 0000
+	//         127 > 0x0000 0000 0000 007F
+	//         255 > 0x0000 0000 0000 00FF
+	// -------------------------
+	// -2147483648 > 0xFFFF FFFF 8000 0000
+	//  2147483647 > 0x0000 0000 7FFF FFFF
+
+	// We'll first normalize the input samples by subtracting 128. That will
+	// get us values in the range [-128, 127].
+	//
+	// We'll then use two different conversion functions - one for the negative
+	// part of the domain and one for the positive part.
+	//   Negative: y = ( 16,777,216 * x ) / 1
+	//   Positive: y = ( 1,690,932,006 * x ) / 100
+	//
+	// We'll switch between the two equations based on the sign bit of the
+	// normalized input value.
+
+	// Model parameters - slope and divisor
+	m := [2]int64{1690932006, 16777216}
+	d := [2]int64{100, 1}
+
+	for i := 0; i < len(in); i++ {
+		normalized := int64(in[i]) - 128
+		idx := (normalized & 0x80) >> 7
+		out[i] = int32((normalized * m[idx]) / d[idx])
+	}
 }
 
 func ConvertInt16ToInt32(out []int32, in []int16) {
-	// panic("int16 -> int32 not implemented")
+
+	// y = (      65536 * x ) / 1      {x  < 0}
+	// y = ( 6553800004 * x ) / 100000 {x >= 0}
+
+	// Model parameters - slope and divisor
+	m := [2]int64{6553800004, 65536}
+	d := [2]int64{100000, 1}
+
+	for i := 0; i < len(in); i++ {
+		idx := (int64(in[i]) & 0x8000) >> 15
+		out[i] = int32((int64(in[i]) * m[idx]) / d[idx])
+	}
 }
 
 func ConvertInt24ToInt32(out []int32, in []Int24) {
-	// panic("int24 -> int32 not implemented")
+	// y = (        256 * x ) / 1        {x  < 0}
+	// y = ( 2560000304 * x ) / 10000000 {x >= 0}
+
+	// Model parameters - slope and divisor
+	m := [2]int64{2560000304, 256}
+	d := [2]int64{10000000, 1}
+
+	for i := 0; i < len(in); i++ {
+		idx := (in[i][2] & 0x80) >> 7
+		out[i] = int32((in[i].AsInt64() * m[idx]) / d[idx])
+	}
 }
 
 func ConvertInt32ToInt32(out []int32, in []int32) {
