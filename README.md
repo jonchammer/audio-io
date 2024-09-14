@@ -22,9 +22,11 @@ developers to efficiently work with audio data. Key features include:
     - Arbitrary frame (or sample) rates
     - Memory-efficient streaming of audio data from disk (e.g. suitable for
       real-time audio streaming)
-  * Quantizers/dequantizers
-    - Suitable for conversions between the `uint8`, `int16`, `int24`, `int32`, 
+  * A `SampleTypeConverter` type that supports:
+    - Dynamic conversions between the `uint8`, `int16`, `int24`, `int32`, 
       `float32`, and `float64` audio formats
+    - The ability to convert 'raw' audio data (`[]byte`) inline using the 
+      `io.Reader` interface.
   * Interleavers/deinterleavers
     - Used to simplify the process of working with multi-channel audio files
 
@@ -175,18 +177,16 @@ deinterleaving arbitrary slices (`InterleaveSlices` and `DeinterleaveSlices`).
 These may prove useful if your application uses the "2D array" approach to 
 block organization.
 
-## Quantization
-The `core` package includes quantizers and dequantizers that allow for 
-conversions between audio sample types (e.g. `int32` and `float32`). PCM types,
-`uint8`, `int16`, `int24`, and `int32` are assumed to use the full range of 
-those types, while IEEE types (`float32` and `float64`) are assumed to use the
-[-1.0, 1.0] range.
+## Sample Type Conversion
+The `core` package includes functions that allow for conversions between 
+audio sample types (e.g. `int32` and `float32`). PCM types, `uint8`, `int16`, 
+`int24`, and `int32` are assumed to use the full range of those types, while 
+IEEE types (`float32` and `float64`) are assumed to use the [-1.0, 1.0] range.
 
 A quick note on `int24`: most programming languages (including Go) lack a 
-native 24-bit integer type, so we use `int32` as a container type with the 
-understanding that values are expected to fall in the range [-8388608, 8388607]. 
-The library will pack and unpack 24-bit integers (mapping to 3-byte sequences) 
-as needed.
+native 24-bit integer type, so this library includes an `Int24` type in the 
+`core` package that is intended to bridge that gap. An `Int24` is defined as
+`[3]byte` and has several helper functions to facilitate packing/unpacking.
 
 ## Developer Information
 

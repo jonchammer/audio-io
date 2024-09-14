@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestAliasAsUint8(t *testing.T) {
+func TestAliasAs_Uint8(t *testing.T) {
 
 	// Verify that the alias shows the correct data
 	src := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}
@@ -25,7 +25,7 @@ func TestAliasAsUint8(t *testing.T) {
 	)
 }
 
-func TestAliasAsInt16(t *testing.T) {
+func TestAliasAs_Int16(t *testing.T) {
 
 	// Verify that the alias shows the correct data
 	src := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}
@@ -45,7 +45,7 @@ func TestAliasAsInt16(t *testing.T) {
 	)
 }
 
-func TestAliasAsInt32(t *testing.T) {
+func TestAliasAs_Int32(t *testing.T) {
 
 	// Verify that the alias shows the correct data
 	src := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}

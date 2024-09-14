@@ -22,21 +22,22 @@ func main() {
 		_ = file.Close()
 	}()
 
-	// Create a reader using the file
+	// Create a wave reader using the file as a source
 	reader := wave.NewReader(file)
 	header, err := reader.Header()
 	if err != nil {
 		failF(err)
 	}
 
+	// Create a converter that will translate samples in real time from their
+	// native format to Int16 so oto can understand them.
 	sampleType, err := header.SampleType()
 	if err != nil {
 		failF(err)
 	}
-
-	// Create a decoder that will translate samples in real time from their
-	// native format to Int16 so oto can understand them.
-	decoder, err := core.NewSampleTypeConverter(reader, sampleType, core.SampleTypeInt16)
+	converter, err := core.NewSampleTypeConverter(
+		reader, sampleType, core.SampleTypeInt16,
+	)
 	if err != nil {
 		failF(err)
 	}
@@ -53,7 +54,7 @@ func main() {
 		failF(err)
 	}
 	<-readyChan
-	player := otoCtx.NewPlayer(decoder)
+	player := otoCtx.NewPlayer(converter)
 	player.Play()
 
 	// Wait for the sound to finish playing

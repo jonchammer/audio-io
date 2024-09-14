@@ -8,16 +8,35 @@ import (
 // SampleType
 // ------------------------------------------------------------------------- //
 
-// SampleType represents the type of audio data that can be accepted by a
-// particular Writer or the type of data that can be extracted from a Reader.
+// SampleType is an enum that describes various ways of storing audio samples
+// in memory. A SampleType determines bit depth (e.g. 24-bit) as well as
+// encoding (e.g. PCM vs. IEEE float).
 type SampleType int
 
 const (
+
+	// SampleTypeUint8 stores audio samples as unsigned 8-bit integers in the
+	// range [-128 - 127]
 	SampleTypeUint8 SampleType = iota + 1
+
+	// SampleTypeInt16 stores audio samples as signed 16-bit integers in the
+	// range [-65,536 - 65,535]
 	SampleTypeInt16
+
+	// SampleTypeInt24 stores audio samples as signed 24-bit integers in the
+	// range [-8,388,608 - 8,388,607]
 	SampleTypeInt24
+
+	// SampleTypeInt32 stores audio samples as signed 32-bit integers in the
+	// range [-2,147,483,648 - 2,147,483,647]
 	SampleTypeInt32
+
+	// SampleTypeFloat32 stores audio samples as 32-bit IEEE float values in
+	// the range [0 - 1]
 	SampleTypeFloat32
+
+	// SampleTypeFloat64 stores audio samples as 64-bit IEEE float values in
+	// the range [0 - 1]
 	SampleTypeFloat64
 )
 

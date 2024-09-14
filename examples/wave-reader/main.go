@@ -120,83 +120,32 @@ func printWaveMetadata(r *wave.Reader) error {
 // that we can process audio data in a fairly standard way.
 func readNormalizedAudioData(r *wave.Reader) ([]float64, error) {
 
-	// NOTE: If the header has already been read, a cached version will be
-	// returned.
+	// Extract some useful metadata from the reader (e.g. the sample type)
 	header, err := r.Header()
 	if err != nil {
 		return nil, err
 	}
-
-	// Ensure the sample type is known
 	sampleType, err := header.SampleType()
 	if err != nil {
 		return nil, err
 	}
 
-	var dequantizedAudioSamples []float64
-
-	switch sampleType {
-	case core.SampleTypeUint8:
-		{
-			data := make([]uint8, header.SampleCount())
-			_, err = r.ReadUint8(data)
-			if err != nil {
-				return nil, err
-			}
-			dequantizedAudioSamples = core.DequantizeUint8(data)
-		}
-
-	case core.SampleTypeInt16:
-		{
-			data := make([]int16, header.SampleCount())
-			_, err = r.ReadInt16(data)
-			if err != nil {
-				return nil, err
-			}
-			dequantizedAudioSamples = core.DequantizeInt16(data)
-		}
-
-	case core.SampleTypeInt24:
-		{
-			data := make([]int32, header.SampleCount())
-			_, err = r.ReadInt24(data)
-			if err != nil {
-				return nil, err
-			}
-			dequantizedAudioSamples = core.DequantizeInt24(data)
-		}
-
-	case core.SampleTypeInt32:
-		{
-			data := make([]int32, header.SampleCount())
-			_, err = r.ReadInt32(data)
-			if err != nil {
-				return nil, err
-			}
-			dequantizedAudioSamples = core.DequantizeInt32(data)
-		}
-
-	case core.SampleTypeFloat32:
-		{
-			data := make([]float32, header.SampleCount())
-			_, err = r.ReadFloat32(data)
-			if err != nil {
-				return nil, err
-			}
-			dequantizedAudioSamples = core.DequantizeFloat32(data)
-		}
-
-	case core.SampleTypeFloat64:
-		{
-			dequantizedAudioSamples = make([]float64, header.SampleCount())
-			_, err = r.ReadFloat64(dequantizedAudioSamples)
-			if err != nil {
-				return nil, err
-			}
-		}
+	// Create a converter that dynamically maps samples to 'float64' at runtime,
+	// regardless of how they're stored in the original wave file.
+	converter, err := core.NewSampleTypeConverter(
+		r, sampleType, core.SampleTypeFloat64,
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	return dequantizedAudioSamples, nil
+	// Create a buffer to hold the float64 samples, fill it, and return it.
+	samples := make([]float64, header.SampleCount())
+	_, err = converter.ReadFloat64(samples)
+	if err != nil {
+		return nil, err
+	}
+	return samples, nil
 }
 
 // minMax computes the min and max values for the given slice.

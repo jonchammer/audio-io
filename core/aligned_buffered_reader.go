@@ -74,6 +74,8 @@ func (r *AlignedBufferedReader) ReadBuffer(maxBytes int) ([]byte, error) {
 	}
 	copy(r.leftoverBuffer, r.buffer[resultSize:bufferSize])
 
+	// TODO: Byte swizzling to account for big-endian machines
+
 	return r.buffer[:resultSize], err
 }
 

@@ -105,102 +105,34 @@ func readNormalizedSamples(
 	// the file.
 	defer close(c)
 
-	// NOTE: If the header has already been read, a cached version will be
-	// returned.
+	// Extract some useful metadata from the reader (e.g. the sample type)
 	header, err := reader.Header()
 	if err != nil {
 		return err
 	}
-
-	// Ensure the sample type is known
 	sampleType, err := header.SampleType()
 	if err != nil {
 		return err
 	}
 
-	switch sampleType {
-	case core.SampleTypeUint8:
-		{
-			for {
-				data := make([]uint8, maxSamples)
-				samplesRead, err := reader.ReadUint8(data)
-				if err != nil && err == io.EOF {
-					break
-				}
+	// Create a converter that dynamically maps samples to 'float64' at
+	// runtime, regardless of how they're stored in the original wave file.
+	converter, err := core.NewSampleTypeConverter(
+		reader, sampleType, core.SampleTypeFloat64,
+	)
+	if err != nil {
+		return err
+	}
 
-				normalized := core.DequantizeUint8(data[:samplesRead])
-				c <- normalized
-			}
+	// Read as many as 'maxSamples' from the wave file and publish them on the
+	// channel.
+	for {
+		data := make([]float64, maxSamples)
+		samplesRead, err := converter.ReadFloat64(data)
+		if err != nil && err == io.EOF {
+			break
 		}
-
-	case core.SampleTypeInt16:
-		{
-			for {
-				data := make([]int16, maxSamples)
-				samplesRead, err := reader.ReadInt16(data)
-				if err != nil && err == io.EOF {
-					break
-				}
-
-				normalized := core.DequantizeInt16(data[:samplesRead])
-				c <- normalized
-			}
-		}
-
-	case core.SampleTypeInt24:
-		{
-			for {
-				data := make([]int32, maxSamples)
-				samplesRead, err := reader.ReadInt24(data)
-				if err != nil && err == io.EOF {
-					break
-				}
-
-				normalized := core.DequantizeInt24(data[:samplesRead])
-				c <- normalized
-			}
-		}
-
-	case core.SampleTypeInt32:
-		{
-			for {
-				data := make([]int32, maxSamples)
-				samplesRead, err := reader.ReadInt32(data)
-				if err != nil && err == io.EOF {
-					break
-				}
-
-				normalized := core.DequantizeInt32(data[:samplesRead])
-				c <- normalized
-			}
-		}
-
-	case core.SampleTypeFloat32:
-		{
-			for {
-				data := make([]float32, maxSamples)
-				samplesRead, err := reader.ReadFloat32(data)
-				if err != nil && err == io.EOF {
-					break
-				}
-
-				normalized := core.DequantizeFloat32(data[:samplesRead])
-				c <- normalized
-			}
-		}
-
-	case core.SampleTypeFloat64:
-		{
-			for {
-				data := make([]float64, maxSamples)
-				samplesRead, err := reader.ReadFloat64(data)
-				if err != nil && err == io.EOF {
-					break
-				}
-
-				c <- data[:samplesRead]
-			}
-		}
+		c <- data[:samplesRead]
 	}
 
 	return nil

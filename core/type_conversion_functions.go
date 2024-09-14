@@ -4,14 +4,33 @@ import (
 	"math"
 )
 
+// This file contains a set of type conversion functions designed to translate
+// between different sample types (e.g. uint8 and float32). These
+// implementations are intended to use the full dynamic range for each type
+// while preserving the '0' value, minimizing changes to the gain of the signal
+// as much as possible.
+//
+// Note that because ranges for most sample types are asymmetric (e.g. -65536
+// to 65535 for int16), many conversion routines use slightly different
+// mappings for the negative and positive parts of the range, rather than using
+// a simpler (but symmetric) conversion function.
+
 // ------------------------------------------------------------------------- //
 // X -> uint8 Converters
 // ------------------------------------------------------------------------- //
 
+// ConvertUint8ToUint8 is a type conversion function that maps input audio
+// samples in the 'uint8' format to the 'uint8' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertUint8ToUint8(out []uint8, in []uint8) {
 	_ = copy(out, in)
 }
 
+// ConvertInt16ToUint8 is a type conversion function that maps input audio
+// samples in the 'int16' format to the 'uint8' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt16ToUint8(out []uint8, in []int16) {
 
 	// NOTE: Extract the most-significant byte of each sample and add 128
@@ -25,6 +44,10 @@ func ConvertInt16ToUint8(out []uint8, in []int16) {
 	}
 }
 
+// ConvertInt24ToUint8 is a type conversion function that maps input audio
+// samples in the 'int24' format to the 'uint8' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt24ToUint8(out []uint8, in []Int24) {
 
 	// NOTE: Extract the most-significant byte (Int24[2] in little-endian
@@ -35,6 +58,10 @@ func ConvertInt24ToUint8(out []uint8, in []Int24) {
 	}
 }
 
+// ConvertInt32ToUint8 is a type conversion function that maps input audio
+// samples in the 'int32' format to the 'uint8' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt32ToUint8(out []uint8, in []int32) {
 
 	// NOTE: Extract the most-significant byte and add 128
@@ -44,6 +71,10 @@ func ConvertInt32ToUint8(out []uint8, in []int32) {
 	}
 }
 
+// ConvertFloat32ToUint8 is a type conversion function that maps input audio
+// samples in the 'float32' format to the 'uint8' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat32ToUint8(out []uint8, in []float32) {
 
 	// [-1, 1] -> [0, 2] -> [0, 1] -> [0, 255]
@@ -54,6 +85,10 @@ func ConvertFloat32ToUint8(out []uint8, in []float32) {
 	}
 }
 
+// ConvertFloat64ToUint8 is a type conversion function that maps input audio
+// samples in the 'float64' format to the 'uint8' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat64ToUint8(out []uint8, in []float64) {
 
 	// [-1, 1] -> [0, 2] -> [0, 1] -> [0, 255]
@@ -68,6 +103,10 @@ func ConvertFloat64ToUint8(out []uint8, in []float64) {
 // X -> int16 Converters
 // ------------------------------------------------------------------------- //
 
+// ConvertUint8ToInt16 is a type conversion function that maps input audio
+// samples in the 'uint8' format to the 'int16' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertUint8ToInt16(out []int16, in []uint8) {
 
 	// y = (   256 * x ) / 1   {x  < 0}
@@ -84,22 +123,38 @@ func ConvertUint8ToInt16(out []int16, in []uint8) {
 	}
 }
 
+// ConvertInt16ToInt16 is a type conversion function that maps input audio
+// samples in the 'int16' format to the 'int16' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt16ToInt16(out []int16, in []int16) {
 	_ = copy(out, in)
 }
 
+// ConvertInt24ToInt16 is a type conversion function that maps input audio
+// samples in the 'int24' format to the 'int16' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt24ToInt16(out []int16, in []Int24) {
 	for i := range in {
 		out[i] = int16(in[i].AsInt32() / 256)
 	}
 }
 
+// ConvertInt32ToInt16 is a type conversion function that maps input audio
+// samples in the 'int32' format to the 'int16' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt32ToInt16(out []int16, in []int32) {
 	for i := range in {
 		out[i] = int16(in[i] / 65536)
 	}
 }
 
+// ConvertFloat32ToInt16 is a type conversion function that maps input audio
+// samples in the 'float32' format to the 'int16' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat32ToInt16(out []int16, in []float32) {
 
 	// [-1, 1] -> [0, 2] -> [0, 65535] -> [-32768, 32767]
@@ -114,6 +169,10 @@ func ConvertFloat32ToInt16(out []int16, in []float32) {
 	}
 }
 
+// ConvertFloat64ToInt16 is a type conversion function that maps input audio
+// samples in the 'float64' format to the 'int16' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat64ToInt16(out []int16, in []float64) {
 
 	// [-1, 1] -> [0, 2] -> [0, 65535] -> [-32768, 32767]
@@ -132,6 +191,10 @@ func ConvertFloat64ToInt16(out []int16, in []float64) {
 // X -> int24 Converters
 // ------------------------------------------------------------------------- //
 
+// ConvertUint8ToInt24 is a type conversion function that maps input audio
+// samples in the 'uint8' format to the 'int24' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertUint8ToInt24(out []Int24, in []uint8) {
 
 	// We'll first normalize the input samples by subtracting 128. That will
@@ -159,6 +222,10 @@ func ConvertUint8ToInt24(out []Int24, in []uint8) {
 	}
 }
 
+// ConvertInt16ToInt24 is a type conversion function that maps input audio
+// samples in the 'int16' format to the 'int24' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt16ToInt24(out []Int24, in []int16) {
 	// y = (     256 * x ) / 1     {x  < 0}
 	// y = ( 2560078 * x ) / 10000 {x >= 0}
@@ -173,16 +240,28 @@ func ConvertInt16ToInt24(out []Int24, in []int16) {
 	}
 }
 
+// ConvertInt24ToInt24 is a type conversion function that maps input audio
+// samples in the 'int24' format to the 'int24' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt24ToInt24(out []Int24, in []Int24) {
-	copy(out, in)
+	_ = copy(out, in)
 }
 
+// ConvertInt32ToInt24 is a type conversion function that maps input audio
+// samples in the 'int32' format to the 'int24' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt32ToInt24(out []Int24, in []int32) {
 	for i := 0; i < len(in); i++ {
 		out[i] = Int24FromInt32(in[i] / 256)
 	}
 }
 
+// ConvertFloat32ToInt24 is a type conversion function that maps input audio
+// samples in the 'float32' format to the 'int24' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat32ToInt24(out []Int24, in []float32) {
 
 	// [-1, 1] -> [0, 2] -> [0, 16777215] -> [-8388608, 8388607]
@@ -197,6 +276,10 @@ func ConvertFloat32ToInt24(out []Int24, in []float32) {
 	}
 }
 
+// ConvertFloat64ToInt24 is a type conversion function that maps input audio
+// samples in the 'float64' format to the 'int24' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat64ToInt24(out []Int24, in []float64) {
 
 	// [-1, 1] -> [0, 2] -> [0, 16777215] -> [-8388608, 8388607]
@@ -215,6 +298,10 @@ func ConvertFloat64ToInt24(out []Int24, in []float64) {
 // X -> int32 Converters
 // ------------------------------------------------------------------------- //
 
+// ConvertUint8ToInt32 is a type conversion function that maps input audio
+// samples in the 'uint8' format to the 'int32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertUint8ToInt32(out []int32, in []uint8) {
 
 	//        -128 > 0xFFFF FFFF FFFF FF80
@@ -247,6 +334,10 @@ func ConvertUint8ToInt32(out []int32, in []uint8) {
 	}
 }
 
+// ConvertInt16ToInt32 is a type conversion function that maps input audio
+// samples in the 'int16' format to the 'int32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt16ToInt32(out []int32, in []int16) {
 
 	// y = (      65536 * x ) / 1      {x  < 0}
@@ -262,6 +353,10 @@ func ConvertInt16ToInt32(out []int32, in []int16) {
 	}
 }
 
+// ConvertInt24ToInt32 is a type conversion function that maps input audio
+// samples in the 'int24' format to the 'int32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt24ToInt32(out []int32, in []Int24) {
 	// y = (        256 * x ) / 1        {x  < 0}
 	// y = ( 2560000304 * x ) / 10000000 {x >= 0}
@@ -276,10 +371,18 @@ func ConvertInt24ToInt32(out []int32, in []Int24) {
 	}
 }
 
+// ConvertInt32ToInt32 is a type conversion function that maps input audio
+// samples in the 'int32' format to the 'int32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt32ToInt32(out []int32, in []int32) {
-	copy(out, in)
+	_ = copy(out, in)
 }
 
+// ConvertFloat32ToInt32 is a type conversion function that maps input audio
+// samples in the 'float32' format to the 'int32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat32ToInt32(out []int32, in []float32) {
 
 	// [-1, 1] -> [0, 2] -> [0, 4294967295] -> [-2147483648, 2147483647]
@@ -294,6 +397,10 @@ func ConvertFloat32ToInt32(out []int32, in []float32) {
 	}
 }
 
+// ConvertFloat64ToInt32 is a type conversion function that maps input audio
+// samples in the 'float64' format to the 'int32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat64ToInt32(out []int32, in []float64) {
 
 	// [-1, 1] -> [0, 2] -> [0, 4294967295] -> [-2147483648, 2147483647]
@@ -312,6 +419,10 @@ func ConvertFloat64ToInt32(out []int32, in []float64) {
 // X -> float32 Converters
 // ------------------------------------------------------------------------- //
 
+// ConvertUint8ToFloat32 is a type conversion function that maps input audio
+// samples in the 'uint8' format to the 'float32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertUint8ToFloat32(out []float32, in []uint8) {
 
 	// Model parameters
@@ -324,6 +435,10 @@ func ConvertUint8ToFloat32(out []float32, in []uint8) {
 	}
 }
 
+// ConvertInt16ToFloat32 is a type conversion function that maps input audio
+// samples in the 'int16' format to the 'float32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt16ToFloat32(out []float32, in []int16) {
 	for i := 0; i < len(in); i++ {
 		sign := (in[i] & math.MinInt16) >> 15
@@ -332,6 +447,10 @@ func ConvertInt16ToFloat32(out []float32, in []int16) {
 	}
 }
 
+// ConvertInt24ToFloat32 is a type conversion function that maps input audio
+// samples in the 'int24' format to the 'float32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt24ToFloat32(out []float32, in []Int24) {
 
 	for i := 0; i < len(in); i++ {
@@ -342,6 +461,10 @@ func ConvertInt24ToFloat32(out []float32, in []Int24) {
 	}
 }
 
+// ConvertInt32ToFloat32 is a type conversion function that maps input audio
+// samples in the 'int32' format to the 'float32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt32ToFloat32(out []float32, in []int32) {
 	for i := 0; i < len(in); i++ {
 		sign := (in[i] & math.MinInt32) >> 31
@@ -350,10 +473,18 @@ func ConvertInt32ToFloat32(out []float32, in []int32) {
 	}
 }
 
+// ConvertFloat32ToFloat32 is a type conversion function that maps input audio
+// samples in the 'float32' format to the 'float32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat32ToFloat32(out []float32, in []float32) {
-	copy(out, in)
+	_ = copy(out, in)
 }
 
+// ConvertFloat64ToFloat32 is a type conversion function that maps input audio
+// samples in the 'float64' format to the 'float32' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat64ToFloat32(out []float32, in []float64) {
 	for i := 0; i < len(in); i++ {
 		out[i] = float32(in[i])
@@ -364,6 +495,10 @@ func ConvertFloat64ToFloat32(out []float32, in []float64) {
 // X -> float64 Converters
 // ------------------------------------------------------------------------- //
 
+// ConvertUint8ToFloat64 is a type conversion function that maps input audio
+// samples in the 'uint8' format to the 'float64' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertUint8ToFloat64(out []float64, in []uint8) {
 
 	// This transformation cannot actually be performed linearly with the
@@ -398,6 +533,10 @@ func ConvertUint8ToFloat64(out []float64, in []uint8) {
 	}
 }
 
+// ConvertInt16ToFloat64 is a type conversion function that maps input audio
+// samples in the 'int16' format to the 'float64' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt16ToFloat64(out []float64, in []int16) {
 
 	// In order to guarantee the most accurate results, we'll start with two
@@ -422,6 +561,10 @@ func ConvertInt16ToFloat64(out []float64, in []int16) {
 	}
 }
 
+// ConvertInt24ToFloat64 is a type conversion function that maps input audio
+// samples in the 'int24' format to the 'float64' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt24ToFloat64(out []float64, in []Int24) {
 
 	// In order to guarantee the most accurate results, we'll start with two
@@ -447,6 +590,10 @@ func ConvertInt24ToFloat64(out []float64, in []Int24) {
 	}
 }
 
+// ConvertInt32ToFloat64 is a type conversion function that maps input audio
+// samples in the 'int32' format to the 'float64' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertInt32ToFloat64(out []float64, in []int32) {
 
 	// In order to guarantee the most accurate results, we'll start with two
@@ -471,12 +618,20 @@ func ConvertInt32ToFloat64(out []float64, in []int32) {
 	}
 }
 
+// ConvertFloat32ToFloat64 is a type conversion function that maps input audio
+// samples in the 'float32' format to the 'float64' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat32ToFloat64(out []float64, in []float32) {
 	for i := 0; i < len(in); i++ {
 		out[i] = float64(in[i])
 	}
 }
 
+// ConvertFloat64ToFloat64 is a type conversion function that maps input audio
+// samples in the 'float64' format to the 'float64' format. Every value in 'in'
+// will be converted and written to 'out'. As such, the caller is responsible
+// for ensuring that len(out) >= len(in).
 func ConvertFloat64ToFloat64(out []float64, in []float64) {
-	copy(out, in)
+	_ = copy(out, in)
 }

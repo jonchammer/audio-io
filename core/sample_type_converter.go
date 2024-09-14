@@ -43,45 +43,58 @@ func NewSampleTypeConverter(
 	}, nil
 }
 
-func (d *SampleTypeConverter) Read(out []byte) (int, error) {
-	switch d.destType {
+// Read allows a SampleTypeConverter to be used as an io.Reader. Raw audio
+// samples (of any sample type) are read from the source reader into an
+// internal buffer. Those samples are then translated to the correct
+// destination sample type and written to 'out'.
+//
+// NOTE: Read returns the total number of 'bytes' (not samples) written to
+// 'out' in order to comply with the contract for io.Reader. The other ReadXXX
+// methods do return sample counts instead.
+func (c *SampleTypeConverter) Read(out []byte) (int, error) {
+	switch c.destType {
 	case SampleTypeUint8:
-		samples, err := d.ReadUint8(out)
+		samples, err := c.ReadUint8(out)
 		return samples * 1, err
 	case SampleTypeInt16:
-		samples, err := d.ReadInt16(AliasAs[int16](out))
+		samples, err := c.ReadInt16(AliasAs[int16](out))
 		return samples * 2, err
 	case SampleTypeInt24:
-		samples, err := d.ReadInt24(AliasAs[Int24](out))
+		samples, err := c.ReadInt24(AliasAs[Int24](out))
 		return samples * 3, err
 	case SampleTypeInt32:
-		samples, err := d.ReadInt32(AliasAs[int32](out))
+		samples, err := c.ReadInt32(AliasAs[int32](out))
 		return samples * 4, err
 	case SampleTypeFloat32:
-		samples, err := d.ReadFloat32(AliasAs[float32](out))
+		samples, err := c.ReadFloat32(AliasAs[float32](out))
 		return samples * 4, err
 	default:
-		samples, err := d.ReadFloat64(AliasAs[float64](out))
+		samples, err := c.ReadFloat64(AliasAs[float64](out))
 		return samples * 8, err
 	}
 }
 
-func (d *SampleTypeConverter) ReadUint8(out []uint8) (int, error) {
+// ReadUint8 reads a batch of audio samples (of any sample type) from the
+// source reader into an internal buffer. Those samples are then translated to
+// the 'uint8' format and written to 'out'.
+//
+// NOTE: ReadUint8 returns the total number of samples written to 'out'.
+func (c *SampleTypeConverter) ReadUint8(out []uint8) (int, error) {
 
-	if d.destType != SampleTypeUint8 {
+	if c.destType != SampleTypeUint8 {
 		return 0, errors.New("expected dest type to be uint8")
 	}
 
 	// Read as many as len(out) samples from the input. The length of 'inRaw'
 	// will always be an integer multiple of the 'sampleSize'.
-	sampleSize := d.sourceType.Size()
-	inRaw, err := d.reader.ReadBuffer(sampleSize * len(out))
+	sampleSize := c.sourceType.Size()
+	inRaw, err := c.reader.ReadBuffer(sampleSize * len(out))
 	samples := len(inRaw) / sampleSize
 
 	// The data in 'inRaw' will be interpreted according to the source type and
 	// then converted to the appropriate dest type. The converted data will be
 	// written into 'out'.
-	switch d.sourceType {
+	switch c.sourceType {
 	case SampleTypeUint8:
 		in := AliasAs[uint8](inRaw)
 		ConvertUint8ToUint8(out, in)
@@ -105,22 +118,27 @@ func (d *SampleTypeConverter) ReadUint8(out []uint8) (int, error) {
 	return samples, err
 }
 
-func (d *SampleTypeConverter) ReadInt16(out []int16) (int, error) {
+// ReadInt16 reads a batch of audio samples (of any sample type) from the
+// source reader into an internal buffer. Those samples are then translated to
+// the 'int16' format and written to 'out'.
+//
+// NOTE: ReadInt16 returns the total number of samples written to 'out'.
+func (c *SampleTypeConverter) ReadInt16(out []int16) (int, error) {
 
-	if d.destType != SampleTypeInt16 {
+	if c.destType != SampleTypeInt16 {
 		return 0, errors.New("expected dest type to be int16")
 	}
 
 	// Read as many as len(out) samples from the input. The length of 'inRaw'
 	// will always be an integer multiple of the 'sampleSize'.
-	sampleSize := d.sourceType.Size()
-	inRaw, err := d.reader.ReadBuffer(sampleSize * len(out))
+	sampleSize := c.sourceType.Size()
+	inRaw, err := c.reader.ReadBuffer(sampleSize * len(out))
 	samples := len(inRaw) / sampleSize
 
 	// The data in 'inRaw' will be interpreted according to the source type and
 	// then converted to the appropriate dest type. The converted data will be
 	// written into 'out'.
-	switch d.sourceType {
+	switch c.sourceType {
 	case SampleTypeUint8:
 		in := AliasAs[uint8](inRaw)
 		ConvertUint8ToInt16(out, in)
@@ -144,22 +162,27 @@ func (d *SampleTypeConverter) ReadInt16(out []int16) (int, error) {
 	return samples, err
 }
 
-func (d *SampleTypeConverter) ReadInt24(out []Int24) (int, error) {
+// ReadInt24 reads a batch of audio samples (of any sample type) from the
+// source reader into an internal buffer. Those samples are then translated to
+// the 'Int24' format and written to 'out'.
+//
+// NOTE: ReadInt24 returns the total number of samples written to 'out'.
+func (c *SampleTypeConverter) ReadInt24(out []Int24) (int, error) {
 
-	if d.destType != SampleTypeInt24 {
+	if c.destType != SampleTypeInt24 {
 		return 0, errors.New("expected dest type to be int24")
 	}
 
 	// Read as many as len(out) samples from the input. The length of 'inRaw'
 	// will always be an integer multiple of the 'sampleSize'.
-	sampleSize := d.sourceType.Size()
-	inRaw, err := d.reader.ReadBuffer(sampleSize * len(out))
+	sampleSize := c.sourceType.Size()
+	inRaw, err := c.reader.ReadBuffer(sampleSize * len(out))
 	samples := len(inRaw) / sampleSize
 
 	// The data in 'inRaw' will be interpreted according to the source type and
 	// then converted to the appropriate dest type. The converted data will be
 	// written into 'out'.
-	switch d.sourceType {
+	switch c.sourceType {
 	case SampleTypeUint8:
 		in := AliasAs[uint8](inRaw)
 		ConvertUint8ToInt24(out, in)
@@ -183,22 +206,27 @@ func (d *SampleTypeConverter) ReadInt24(out []Int24) (int, error) {
 	return samples, err
 }
 
-func (d *SampleTypeConverter) ReadInt32(out []int32) (int, error) {
+// ReadInt32 reads a batch of audio samples (of any sample type) from the
+// source reader into an internal buffer. Those samples are then translated to
+// the 'int32' format and written to 'out'.
+//
+// NOTE: ReadInt32 returns the total number of samples written to 'out'.
+func (c *SampleTypeConverter) ReadInt32(out []int32) (int, error) {
 
-	if d.destType != SampleTypeInt32 {
+	if c.destType != SampleTypeInt32 {
 		return 0, errors.New("expected dest type to be int32")
 	}
 
 	// Read as many as len(out) samples from the input. The length of 'inRaw'
 	// will always be an integer multiple of the 'sampleSize'.
-	sampleSize := d.sourceType.Size()
-	inRaw, err := d.reader.ReadBuffer(sampleSize * len(out))
+	sampleSize := c.sourceType.Size()
+	inRaw, err := c.reader.ReadBuffer(sampleSize * len(out))
 	samples := len(inRaw) / sampleSize
 
 	// The data in 'inRaw' will be interpreted according to the source type and
 	// then converted to the appropriate dest type. The converted data will be
 	// written into 'out'.
-	switch d.sourceType {
+	switch c.sourceType {
 	case SampleTypeUint8:
 		in := AliasAs[uint8](inRaw)
 		ConvertUint8ToInt32(out, in)
@@ -222,22 +250,27 @@ func (d *SampleTypeConverter) ReadInt32(out []int32) (int, error) {
 	return samples, err
 }
 
-func (d *SampleTypeConverter) ReadFloat32(out []float32) (int, error) {
+// ReadFloat32 reads a batch of audio samples (of any sample type) from the
+// source reader into an internal buffer. Those samples are then translated to
+// the 'float32' format and written to 'out'.
+//
+// NOTE: ReadFloat32 returns the total number of samples written to 'out'.
+func (c *SampleTypeConverter) ReadFloat32(out []float32) (int, error) {
 
-	if d.destType != SampleTypeFloat32 {
+	if c.destType != SampleTypeFloat32 {
 		return 0, errors.New("expected dest type to be float32")
 	}
 
 	// Read as many as len(out) samples from the input. The length of 'inRaw'
 	// will always be an integer multiple of the 'sampleSize'.
-	sampleSize := d.sourceType.Size()
-	inRaw, err := d.reader.ReadBuffer(sampleSize * len(out))
+	sampleSize := c.sourceType.Size()
+	inRaw, err := c.reader.ReadBuffer(sampleSize * len(out))
 	samples := len(inRaw) / sampleSize
 
 	// The data in 'inRaw' will be interpreted according to the source type and
 	// then converted to the appropriate dest type. The converted data will be
 	// written into 'out'.
-	switch d.sourceType {
+	switch c.sourceType {
 	case SampleTypeUint8:
 		in := AliasAs[uint8](inRaw)
 		ConvertUint8ToFloat32(out, in)
@@ -261,22 +294,27 @@ func (d *SampleTypeConverter) ReadFloat32(out []float32) (int, error) {
 	return samples, err
 }
 
-func (d *SampleTypeConverter) ReadFloat64(out []float64) (int, error) {
+// ReadFloat64 reads a batch of audio samples (of any sample type) from the
+// source reader into an internal buffer. Those samples are then translated to
+// the 'float64' format and written to 'out'.
+//
+// NOTE: ReadFloat64 returns the total number of samples written to 'out'.
+func (c *SampleTypeConverter) ReadFloat64(out []float64) (int, error) {
 
-	if d.destType != SampleTypeFloat64 {
+	if c.destType != SampleTypeFloat64 {
 		return 0, errors.New("expected dest type to be float64")
 	}
 
 	// Read as many as len(out) samples from the input. The length of 'inRaw'
 	// will always be an integer multiple of the 'sampleSize'.
-	sampleSize := d.sourceType.Size()
-	inRaw, err := d.reader.ReadBuffer(sampleSize * len(out))
+	sampleSize := c.sourceType.Size()
+	inRaw, err := c.reader.ReadBuffer(sampleSize * len(out))
 	samples := len(inRaw) / sampleSize
 
 	// The data in 'inRaw' will be interpreted according to the source type and
 	// then converted to the appropriate dest type. The converted data will be
 	// written into 'out'.
-	switch d.sourceType {
+	switch c.sourceType {
 	case SampleTypeUint8:
 		in := AliasAs[uint8](inRaw)
 		ConvertUint8ToFloat64(out, in)

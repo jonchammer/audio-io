@@ -1,6 +1,6 @@
 module player
 
-go 1.21
+go 1.22
 
 replace github.com/jonchammer/audio-io => /Users/jch002j/projects/personal/audio-io
 

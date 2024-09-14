@@ -81,15 +81,25 @@ func saveAsWave(
 	// Quantize the audio data and write it to our wave writer
 	switch format {
 	case core.SampleTypeUint8:
-		err = w.WriteUint8(core.QuantizeToUint8(data))
+		samples := make([]uint8, len(data))
+		core.ConvertFloat64ToUint8(samples, data)
+		err = w.WriteUint8(samples)
 	case core.SampleTypeInt16:
-		err = w.WriteInt16(core.QuantizeToInt16(data))
+		samples := make([]int16, len(data))
+		core.ConvertFloat64ToInt16(samples, data)
+		err = w.WriteInt16(samples)
 	case core.SampleTypeInt24:
-		err = w.WriteInt24(core.QuantizeToInt24(data))
+		samples := make([]core.Int24, len(data))
+		core.ConvertFloat64ToInt24(samples, data)
+		err = w.WriteInt24(samples)
 	case core.SampleTypeInt32:
-		err = w.WriteInt32(core.QuantizeToInt32(data))
+		samples := make([]int32, len(data))
+		core.ConvertFloat64ToInt32(samples, data)
+		err = w.WriteInt32(samples)
 	case core.SampleTypeFloat32:
-		err = w.WriteFloat32(core.QuantizeToFloat32(data))
+		samples := make([]float32, len(data))
+		core.ConvertFloat64ToFloat32(samples, data)
+		err = w.WriteFloat32(samples)
 	default:
 		err = w.WriteFloat64(data)
 	}

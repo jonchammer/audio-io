@@ -9,8 +9,8 @@ import (
 // aliased slice will be reflected in the original source.
 //
 // NOTE: Users of AliasAs should be aware of both the byte ordering of 'src'
-// the native byte ordering of their host machine. This implementation makes
-// no attempt to correct for discrepancies between the two. Incorrect
+// and the native byte ordering of their host machine. This implementation
+// makes no attempt to correct for discrepancies between the two. Incorrect
 // assumptions about byte ordering may result in functional discrepancies.
 func AliasAs[T uint8 | int16 | Int24 | int32 | int64 | float32 | float64](
 	src []byte,
