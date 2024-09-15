@@ -64,7 +64,9 @@ func main() {
 	c := make(chan []float64)
 	go generateSineWave(c, duration, sampleRate, sineFrequency, sineGain)
 	for buffer := range c {
-		err = w.WriteInt24(core.QuantizeToInt24(buffer))
+		int24Buffer := make([]core.Int24, len(buffer))
+		core.ConvertFloat64ToInt24(int24Buffer, buffer)
+		err = w.WriteInt24(int24Buffer)
 		if err != nil {
 			failF(err)
 		}

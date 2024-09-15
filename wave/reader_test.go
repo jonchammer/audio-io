@@ -2,6 +2,7 @@ package wave
 
 import (
 	"bytes"
+	"github.com/jonchammer/audio-io/core"
 	"github.com/stretchr/testify/require"
 	"io"
 	"testing"
@@ -185,7 +186,7 @@ func TestReader_ReadInt24_InvalidHeader(t *testing.T) {
 		' ', ' ', ' ', ' ',
 	}
 	r := NewReader(bytes.NewReader(payload))
-	_, err := r.ReadInt24(make([]int32, 8))
+	_, err := r.ReadInt24(make([]core.Int24, 8))
 	require.ErrorIs(t, err, ErrRIFFChunkCorruptedHeader)
 }
 
@@ -204,7 +205,7 @@ func TestReader_ReadInt24_InvalidSampleType(t *testing.T) {
 		0x04, 0x00, 0x10, 0x00,
 	}
 	r := NewReader(bytes.NewReader(payload))
-	_, err := r.ReadInt24(make([]int32, 8))
+	_, err := r.ReadInt24(make([]core.Int24, 8))
 	require.ErrorContains(t, err, "invalid format code: 'FormatCode(65535)'")
 
 	// Sample type is actually uint8
@@ -222,7 +223,7 @@ func TestReader_ReadInt24_InvalidSampleType(t *testing.T) {
 		0x08, 0x00, // 8 Bits per sample
 	}
 	r = NewReader(bytes.NewReader(payload))
-	_, err = r.ReadInt24(make([]int32, 8))
+	_, err = r.ReadInt24(make([]core.Int24, 8))
 	require.ErrorIs(t, err, ErrReaderUnexpectedInt24)
 }
 

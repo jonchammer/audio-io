@@ -208,21 +208,20 @@ func (r *Reader) ReadInt16(data []int16) (int, error) {
 }
 
 // ReadInt24 reads a chunk of 24-bit samples from the data source (where each
-// individual sample is represented as an int32 in the range
-// [-8388608, 8388607]) and places those samples into the provided buffer. As
-// many as len(data) samples could be read in a single call. The actual number
-// of samples read will be returned, along with an error if data could not be
-// read or the EOF has been reached.
+// individual sample is represented as a core.Int24) and places those samples
+// into the provided buffer. As many as len(data) samples could be read in a
+// single call. The actual number of samples read will be returned, along with
+// an error if data could not be read or the EOF has been reached.
 //
 // ReadInt24 will return an ErrReaderUnexpectedInt24 error if the underlying
-// audio data is not representable as a []int32 (e.g. float32 samples). If
+// audio data is not representable as a []core.Int24 (e.g. float32 samples). If
 // the caller is not sure of the data representation, they should call
 // Header.SampleType to determine which ReadXXX function to call.
 //
 // NOTE: Audio samples will be **interleaved** if the data source uses multiple
 // channels. core.DeinterleaveSlices can be used to de-interleave (split into
 // separate channels) if needed.
-func (r *Reader) ReadInt24(data []int32) (int, error) {
+func (r *Reader) ReadInt24(data []core.Int24) (int, error) {
 
 	// Make sure we've read the header already
 	header, err := r.Header()
@@ -243,7 +242,7 @@ func (r *Reader) ReadInt24(data []int32) (int, error) {
 	bytesRead, err := r.readChunk(len(data) * n)
 	samplesRead := bytesRead / n
 	extraBytes := bytesRead % n
-	_ = ReadPackedInt24Into(r.buffer[:(bytesRead-extraBytes)], data[:samplesRead])
+	_ = core.ReadInt24Into(r.buffer[:(bytesRead-extraBytes)], data[:samplesRead])
 	return samplesRead, err
 }
 

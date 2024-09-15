@@ -590,7 +590,14 @@ func TestE2E_Int24_Normal(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInt24([]int32{-8388608, -8388607, 0, 1, 8388606, 8388607})
+	err = w.WriteInt24([]core.Int24{
+		core.Int24FromInt32(-8388608),
+		core.Int24FromInt32(-8388607),
+		core.Int24FromInt32(0),
+		core.Int24FromInt32(1),
+		core.Int24FromInt32(8388606),
+		core.Int24FromInt32(8388607),
+	})
 	require.NoError(t, err)
 	err = w.Flush()
 	require.NoError(t, err)
@@ -629,12 +636,19 @@ func TestE2E_Int24_Normal(t *testing.T) {
 	require.Equal(t, []byte("data"), data[72:76])
 	require.Equal(t, uint32(18), binary.LittleEndian.Uint32(data[76:80]))
 
-	// Read 24-bit data from the buffer into an []int32 to reconstruct the data
-	readData, err := ReadPackedInt24(data[80:98])
+	// Read 24-bit data from the buffer
+	readData, err := core.ReadInt24(data[80:98])
 	require.NoError(t, err)
 	require.Equal(
 		t,
-		[]int32{-8388608, -8388607, 0, 1, 8388606, 8388607},
+		[]core.Int24{
+			core.Int24FromInt32(-8388608),
+			core.Int24FromInt32(-8388607),
+			core.Int24FromInt32(0),
+			core.Int24FromInt32(1),
+			core.Int24FromInt32(8388606),
+			core.Int24FromInt32(8388607),
+		},
 		readData,
 	)
 
@@ -684,12 +698,19 @@ func TestE2E_Int24_Normal(t *testing.T) {
 	require.Equal(t, time.Duration(seconds*1e9), header.PlayTime())
 
 	// Read the audio data.
-	buffer := make([]int32, header.SampleCount())
+	buffer := make([]core.Int24, header.SampleCount())
 	n, err := r.ReadInt24(buffer)
 	require.NoError(t, err)
 	require.Equal(
 		t,
-		[]int32{-8388608, -8388607, 0, 1, 8388606, 8388607},
+		[]core.Int24{
+			core.Int24FromInt32(-8388608),
+			core.Int24FromInt32(-8388607),
+			core.Int24FromInt32(0),
+			core.Int24FromInt32(1),
+			core.Int24FromInt32(8388606),
+			core.Int24FromInt32(8388607),
+		},
 		buffer[:n],
 	)
 }
@@ -702,7 +723,9 @@ func TestE2E_Int24_Padding(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInt24([]int32{-8388608})
+	err = w.WriteInt24([]core.Int24{
+		core.Int24FromInt32(-8388608),
+	})
 	require.NoError(t, err)
 	err = w.Flush()
 	require.NoError(t, err)
@@ -741,10 +764,12 @@ func TestE2E_Int24_Padding(t *testing.T) {
 	require.Equal(t, []byte("data"), data[72:76])
 	require.Equal(t, uint32(3), binary.LittleEndian.Uint32(data[76:80]))
 
-	// Read 24-bit data from the buffer into an []int32 to reconstruct the data
-	readData, err := ReadPackedInt24(data[80:83])
+	// Read 24-bit data from the buffer
+	readData, err := core.ReadInt24(data[80:83])
 	require.NoError(t, err)
-	require.Equal(t, []int32{-8388608}, readData)
+	require.Equal(t, []core.Int24{
+		core.Int24FromInt32(-8388608),
+	}, readData)
 	require.Equal(t, uint8(0x00), data[83])
 
 	r := NewReader(ioBytes.NewReader(data))
@@ -793,12 +818,14 @@ func TestE2E_Int24_Padding(t *testing.T) {
 	require.Equal(t, time.Duration(seconds*1e9), header.PlayTime())
 
 	// Read the audio data.
-	buffer := make([]int32, header.SampleCount())
+	buffer := make([]core.Int24, header.SampleCount())
 	n, err := r.ReadInt24(buffer)
 	require.NoError(t, err)
 	require.Equal(
 		t,
-		[]int32{-8388608},
+		[]core.Int24{
+			core.Int24FromInt32(-8388608),
+		},
 		buffer[:n],
 	)
 }

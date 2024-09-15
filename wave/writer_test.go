@@ -183,7 +183,12 @@ func TestWriter_WriteInt24_Normal(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInt24([]int32{0, 8388607, 0, -8388608})
+	err = w.WriteInt24([]core.Int24{
+		core.Int24FromInt32(0),
+		core.Int24FromInt32(8388607),
+		core.Int24FromInt32(0),
+		core.Int24FromInt32(-8388608),
+	})
 	require.NoError(t, err)
 	require.Greater(t, baseWriter.Len(), 0)
 }
@@ -195,7 +200,12 @@ func TestWriter_WriteInt24_InvalidSampleType(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = w.WriteInt24([]int32{0, 8388607, 0, -8388608})
+	err = w.WriteInt24([]core.Int24{
+		core.Int24FromInt32(0),
+		core.Int24FromInt32(8388607),
+		core.Int24FromInt32(0),
+		core.Int24FromInt32(-8388608),
+	})
 	require.ErrorIs(t, err, ErrWriterExpectedInt24)
 }
 

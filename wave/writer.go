@@ -160,11 +160,9 @@ func (w *Writer) WriteInt16(data []int16) error {
 // SampleTypeInt24.
 //
 // NOTE: most programming languages (including Go) don't provide a native
-// 24-bit integer type, so we usually use `int32` as a container type with the
-// understanding that values are expected to fall in the range
-// [-8388608, 8388607]. There is special logic where needed to pack and unpack
-// values as 24-bit integers.
-func (w *Writer) WriteInt24(data []int32) error {
+// 24-bit integer type, so we'll use a custom type defined in the core package
+// to bridge that gap.
+func (w *Writer) WriteInt24(data []core.Int24) error {
 
 	if w.sampleType != core.SampleTypeInt24 {
 		return ErrWriterExpectedInt24
@@ -262,7 +260,7 @@ func (w *Writer) write(data any) error {
 }
 
 // writeInt24 is a specialization of write to be used with int24 data.
-func (w *Writer) writeInt24(data []int32) error {
+func (w *Writer) writeInt24(data []core.Int24) error {
 	if w.dataBytes == 0 {
 		err := w.writePreamble()
 		if err != nil {
@@ -275,7 +273,7 @@ func (w *Writer) writeInt24(data []int32) error {
 	if err != nil {
 		return err
 	}
-	_, err = WritePackedInt24(w.baseWriter, data)
+	_, err = core.WriteInt24Slice(w.baseWriter, data)
 	if err != nil {
 		return err
 	}
