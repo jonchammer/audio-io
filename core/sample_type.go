@@ -16,27 +16,29 @@ type SampleType int
 const (
 
 	// SampleTypeUint8 stores audio samples as unsigned 8-bit integers in the
-	// range [-128 - 127]
+	// range [-128, 127]
 	SampleTypeUint8 SampleType = iota + 1
 
 	// SampleTypeInt16 stores audio samples as signed 16-bit integers in the
-	// range [-65,536 - 65,535]
+	// range [-32,768, 32,767]
 	SampleTypeInt16
 
 	// SampleTypeInt24 stores audio samples as signed 24-bit integers in the
-	// range [-8,388,608 - 8,388,607]
+	// range [-8,388,608, 8,388,607]
 	SampleTypeInt24
 
 	// SampleTypeInt32 stores audio samples as signed 32-bit integers in the
-	// range [-2,147,483,648 - 2,147,483,647]
+	// range [-2,147,483,648, 2,147,483,647]
 	SampleTypeInt32
 
 	// SampleTypeFloat32 stores audio samples as 32-bit IEEE float values in
-	// the range [0 - 1]
+	// the range [0, 1]. Note that due to how IEEE 754 works, there are
+	// approximately 1B unique values (about 2^30) in the range [0, 1].
 	SampleTypeFloat32
 
 	// SampleTypeFloat64 stores audio samples as 64-bit IEEE float values in
-	// the range [0 - 1]
+	// the range [0, 1]. Note that due to how IEEE 754 works, there are
+	// approximately 5 x 10^18 unique values (about 2^62) in the range [0, 1].
 	SampleTypeFloat64
 )
 
